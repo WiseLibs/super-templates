@@ -1,0 +1,20 @@
+{
+  "name": "functional-templates",
+  "version": "1.0.0",
+  "description": "A functional HTML/XML templating system for JavaScript",
+  "author": "Joshua Wise <joshuathomaswise@gmail.com>",
+  "homepage": "https://github.com/JoshuaWise/functional-templates#readme",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/JoshuaWise/functional-templates.git"
+  },
+  "license": "MIT",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "acorn": "^8.8.2",
+    "string-width": "^4.2.3"
+  }
+}
