@@ -158,6 +158,7 @@ function parseJavaScript(parser) {
 const JS_OPTIONS = {
 	ecmaVersion: 'latest',
 	sourceType: 'module',
+	preserveParens: true,
 	allowReserved: false,
 	allowReturnOutsideFunction: false,
 	allowImportExportEverywhere: false,

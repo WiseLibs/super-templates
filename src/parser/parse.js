@@ -25,13 +25,13 @@ module.exports = (file) => {
 			if (!comment(parser)) {
 				const node = interpolation(parser);
 				if (node instanceof ast.SectionNode) {
-					node.source.error('Illegal "section" block').throw();
+					node.source.error('Illegal \'section\' block').throw();
 				}
 				if (node instanceof ast.ElseNode) {
-					node.source.error('Illegal "else" token').throw();
+					node.source.error('Illegal \'else\' token').throw();
 				}
 				if (node instanceof ast.EndNode) {
-					node.source.error('Illegal "end" token').throw();
+					node.source.error('Illegal \'end\' token').throw();
 				}
 				nodes.push(node);
 			}
@@ -50,14 +50,14 @@ function blockContent(parser, strictBlock, allowSections = false, allowElse = fa
 			if (!comment(parser)) {
 				const node = interpolation(parser, allowSections);
 				if (node instanceof ast.SectionNode && !allowSections) {
-					node.source.error('Illegal "section" block').throw();
+					node.source.error('Illegal \'section\' block').throw();
 				}
 				if (node instanceof ast.ElseNode) {
 					if (allowElse) {
 						nodes.push(node);
 						break;
 					}
-					node.source.error('Illegal "else" token').throw();
+					node.source.error('Illegal \'else\' token').throw();
 				}
 				if (node instanceof ast.EndNode) {
 					break;
@@ -118,6 +118,7 @@ function interpolation(parser, allowSections = false) {
 
 // TODO: if the template is included somewhere but isn't given bindings for all
 //   template parameters, compile-time error
+// TODO: a template's parameters cannot have duplicate names
 function letBlock(parser, start, allowSections = false) {
 	parser.accept(WHITESPACE);
 	parser.expect(IDENT);
@@ -222,6 +223,7 @@ function includeBlock(parser, start) {
 	return new ast.IncludeNode(source, js, parsedJS.value, bindings, children);
 }
 
+// TODO: include bindings cannot have duplicate names
 function includeBindings(parser) {
 	const bindings = [];
 	while (parser.accept(IDENT)) {
@@ -242,6 +244,7 @@ function includeBindings(parser) {
 	return bindings;
 }
 
+// TODO: section blocks cannot have duplicate names within the same include block
 function sectionBlock(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
@@ -322,7 +325,7 @@ function expression(parser, start, type) {
 	parser.accept(WHITESPACE);
 	parser.expect('}}');
 	const end = parser.getCaptured();
-	return new ExpressionNode(start.to(end), js, type);
+	return new ast.ExpressionNode(start.to(end), js, type);
 }
 
 function literal(parser) {

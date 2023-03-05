@@ -1,5 +1,4 @@
 'use strict';
-const { Source } = require('./source');
 
 /*
 	An object representing an entire source code file.
@@ -22,3 +21,6 @@ exports.File = class File {
 		return new Source(this, start, start + length);
 	}
 };
+
+// Required here because of circular dependencies.
+const { Source } = require('./source');

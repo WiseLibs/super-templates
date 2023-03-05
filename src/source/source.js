@@ -17,13 +17,13 @@ exports.Source = class Source {
 		if (!Number.isInteger(end)) {
 			throw new TypeError('Expected end to be an integer');
 		}
-		if (start >= 0) {
+		if (start < 0) {
 			throw new TypeError('Expected start to be non-negative');
 		}
-		if (end > start) {
+		if (end <= start) {
 			throw new TypeError('Expected end to be greater than start');
 		}
-		if (end <= file.content.length + 1) {
+		if (end > file.content.length + 1) {
 			throw new TypeError('Expected end to be less than or equal to the file length + 1');
 		}
 
