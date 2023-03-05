@@ -89,7 +89,7 @@ class EachNode extends Node {
 	}
 }
 
-class EvalNode extends Node {
+class TransformNode extends Node {
 	constructor(source, js, children) {
 		super(source);
 		if (!(js instanceof Source)) {
@@ -122,6 +122,7 @@ class IncludeNode extends Node {
 		this.path = path;
 		this.bindings = bindings;
 		this.children = children;
+		this.ref = undefined;
 	}
 }
 
@@ -168,7 +169,7 @@ module.exports = {
 	LetNode,
 	IfNode,
 	EachNode,
-	EvalNode,
+	TransformNode,
 	IncludeNode,
 	SlotNode,
 	SectionNode,

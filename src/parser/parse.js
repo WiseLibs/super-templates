@@ -103,7 +103,7 @@ function interpolation(parser, allowSections = false) {
 		if (keyword === 'let') return letBlock(parser, start, allowSections);
 		if (keyword === 'if') return ifBlock(parser, start);
 		if (keyword === 'each') return eachBlock(parser, start);
-		if (keyword === 'eval') return evalBlock(parser, start);
+		if (keyword === 'transform') return transformBlock(parser, start);
 		if (keyword === 'include') return includeBlock(parser, start);
 		if (keyword === 'section') return sectionBlock(parser, start);
 		if (keyword === 'slot') return slotTag(parser, start);
@@ -193,7 +193,7 @@ function eachBlock(parser, start) {
 	return new ast.EachNode(source, js, name, indexName, children);
 }
 
-function evalBlock(parser, start) {
+function transformBlock(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
 	parser.expectJavaScript();
@@ -203,7 +203,7 @@ function evalBlock(parser, start) {
 	const end = parser.getCaptured();
 	const source = start.to(end);
 	const children = blockContent(parser, source);
-	return new ast.EvalNode(source, js, children);
+	return new ast.TransformNode(source, js, children);
 }
 
 function includeBlock(parser, start) {
