@@ -1,5 +1,5 @@
 'use strict';
-const { Source } = require('../source/source');
+const { Source } = require('../source');
 
 /*
 	These nodes form the AST of a functional template file.

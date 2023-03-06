@@ -4,7 +4,7 @@
 	An object representing an entire source code file.
  */
 
-exports.File = class File {
+module.exports = class File {
 	constructor(filename, content) {
 		if (typeof filename !== 'string') {
 			throw new TypeError('Expected filename to be a string');
@@ -23,4 +23,4 @@ exports.File = class File {
 };
 
 // Required here because of circular dependencies.
-const { Source } = require('./source');
+const Source = require('./source');

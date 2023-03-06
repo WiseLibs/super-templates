@@ -1,12 +1,12 @@
 'use strict';
-const { File } = require('./file');
-const { Printer } = require('./printer');
+const File = require('./file');
+const Printer = require('./printer');
 
 /*
 	An object representing a piece of source code.
  */
 
-exports.Source = class Source {
+module.exports = class Source {
 	constructor(file, start, end) {
 		if (!(file instanceof File)) {
 			throw new TypeError('Expected file to be a File object');

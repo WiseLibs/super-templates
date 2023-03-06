@@ -7,7 +7,7 @@ const stringWidth = require('string-width');
 	relevant source code.
  */
 
-exports.Printer = class Printer {
+module.exports = class Printer {
 	constructor() {
 		this._prev = undefined;
 		this._indent = ' ';

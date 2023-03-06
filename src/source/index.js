@@ -1,7 +1,5 @@
 'use strict';
 
-Object.assign(exports,
-	require('./file'),
-	require('./source'),
-	require('./printer'),
-);
+exports.File = require('./file');
+exports.Source = require('./source');
+exports.Printer = require('./printer');
