@@ -1,6 +1,6 @@
 'use strict';
 const { parseExpressionAt } = require('acorn');
-const src = require('../source');
+const { File, Printer } = require('../source');
 
 /*
 	The parser state and methods used for recursive descent parsing.
@@ -8,7 +8,7 @@ const src = require('../source');
 
 module.exports = class Parser {
 	constructor(file) {
-		if (!(file instanceof src.File)) {
+		if (!(file instanceof File)) {
 			throw new TypeError('Expected file to be a File object');
 		}
 		this._file = file;
@@ -109,7 +109,7 @@ module.exports = class Parser {
 				message = 'Unexpected end of input';
 			}
 		}
-		return new src.Printer()
+		return new Printer()
 			.error(message)
 			.source(this._file.at(this._index, length))
 			.throw();

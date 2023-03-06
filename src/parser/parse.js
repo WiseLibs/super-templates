@@ -1,5 +1,5 @@
 'use strict';
-const src = require('../source');
+const { File } = require('../source');
 const ast = require('./ast');
 const Parser = require('./parser');
 
@@ -12,7 +12,7 @@ const IDENT = /[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*/yu;
  */
 
 module.exports = (file) => {
-	if (!(file instanceof src.File)) {
+	if (!(file instanceof File)) {
 		throw new TypeError('Expected file to be a File object');
 	}
 	const parser = new Parser(file);
