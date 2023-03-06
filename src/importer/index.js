@@ -1,7 +1,14 @@
 'use strict';
 const fs = require('fs/promises');
 const path = require('path');
-const importTemplate = require('./import');
+const importAST = require('./import');
+const link = require('./link');
+
+/*
+	Returns the combined ASTs of all imported template files, starting with one
+	initial filename, and links all slots and template parameters in all
+	included templates.
+ */
 
 exports.import = async (filename, options = {}) => {
 	if (typeof filename !== 'string') {
@@ -20,11 +27,13 @@ exports.import = async (filename, options = {}) => {
 		throw new TypeError('Expected options.load to be a function');
 	}
 
-	return importTemplate(filename, resolve, load);
+	const nodes = await importAST(filename, resolve, load);
+	link(nodes);
+	return nodes;
 };
 
 function defaultResolve(includeString, resolveFrom) {
-	return path.resolve(resolveFrom, includeString);
+	return path.resolve(path.dirname(resolveFrom), includeString);
 }
 
 function defaultLoad(filename) {

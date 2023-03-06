@@ -116,13 +116,10 @@ function interpolation(parser, allowSections = false) {
 	return expression(parser, start, 'normal');
 }
 
-// TODO: if the template is included somewhere but isn't given bindings for all
-//   template parameters, compile-time error
-// TODO: a template's parameters cannot have duplicate names
 function letBlock(parser, start, allowSections = false) {
 	parser.accept(WHITESPACE);
 	parser.expect(IDENT);
-	const name = parser.getCaptured();
+	const name = parser.getCaptured().string();
 	parser.accept(WHITESPACE);
 	let js;
 	if (parser.accept(':')) {
@@ -172,13 +169,13 @@ function eachBlock(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
 	parser.expect(IDENT);
-	const name = parser.getCaptured();
+	const name = parser.getCaptured().string();
 	let indexName;
 	parser.accept(WHITESPACE);
 	if (parser.accept(',')) {
 		parser.accept(WHITESPACE);
 		parser.expect(IDENT);
-		indexName = parser.getCaptured();
+		indexName = parser.getCaptured().string();
 		parser.accept(WHITESPACE);
 	}
 	parser.expect(':');
@@ -223,7 +220,6 @@ function includeBlock(parser, start) {
 	return new ast.IncludeNode(source, js, parsedJS.value, bindings, children);
 }
 
-// TODO: include bindings cannot have duplicate names
 function includeBindings(parser) {
 	const bindings = [];
 	while (parser.accept(IDENT)) {
@@ -232,24 +228,24 @@ function includeBindings(parser) {
 		}
 		parser.accept(WHITESPACE);
 		parser.expect(IDENT);
-		const name = parser.getCaptured();
+		const source = parser.getCaptured();
+		const name = source.string();
 		parser.accept(WHITESPACE);
 		parser.expect(':');
 		parser.accept(WHITESPACE);
 		parser.expectJavaScript();
 		const js = parser.getCaptured();
 		parser.accept(WHITESPACE);
-		bindings.push({ name, js });
+		bindings.push({ source, name, js });
 	}
 	return bindings;
 }
 
-// TODO: section blocks cannot have duplicate names within the same include block
 function sectionBlock(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
 	parser.expect(IDENT);
-	const name = parser.getCaptured();
+	const name = parser.getCaptured().string();
 	parser.accept(WHITESPACE);
 	parser.expect('}}');
 	const end = parser.getCaptured();
@@ -258,17 +254,12 @@ function sectionBlock(parser, start) {
 	return new ast.SectionNode(source, name, children);
 }
 
-// TODO: if the template is included somewhere with child content
-//   (excluding SectionNode or whitespace-only LiteralNode),
-//   but no default (i.e., unnamed) slot exists in the template, compile-time error
-// TODO: if the template is included somewhere with a named section,
-//   but no matching slot exists in the template, compile-time error
 function slotTag(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
-	let name; // TODO: only one slot of each name can exist in each template
+	let name = '';
 	if (parser.accept(IDENT)) {
-		name = parser.getCaptured();
+		name = parser.getCaptured().string();
 		parser.accept(WHITESPACE);
 	}
 	parser.expect('}}');

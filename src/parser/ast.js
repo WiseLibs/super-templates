@@ -14,7 +14,12 @@ class Node {
 	}
 }
 
-class LiteralNode extends Node {}
+class LiteralNode extends Node {
+	constructor(source) {
+		super(source);
+		this.children = [];
+	}
+}
 
 class ExpressionNode extends Node {
 	constructor(source, js, type) {
@@ -27,6 +32,7 @@ class ExpressionNode extends Node {
 		}
 		this.js = js;
 		this.type = type;
+		this.children = [];
 	}
 }
 
@@ -36,8 +42,8 @@ class LetNode extends Node {
 		if (js !== undefined && !(js instanceof Source)) {
 			throw new TypeError('Expected js to be a Source object');
 		}
-		if (!(name instanceof Source)) {
-			throw new TypeError('Expected name to be a Source object');
+		if (typeof name !== 'string') {
+			throw new TypeError('Expected name to be a string');
 		}
 		if (!Array.isArray(children)) {
 			throw new TypeError('Expected children to be an array');
@@ -45,6 +51,7 @@ class LetNode extends Node {
 		this.js = js;
 		this.name = name;
 		this.children = children;
+		this.refs = new Map();
 	}
 }
 
@@ -73,11 +80,11 @@ class EachNode extends Node {
 		if (!(js instanceof Source)) {
 			throw new TypeError('Expected js to be a Source object');
 		}
-		if (!(name instanceof Source)) {
-			throw new TypeError('Expected name to be a Source object');
+		if (typeof name !== 'string') {
+			throw new TypeError('Expected name to be a string');
 		}
-		if (indexName !== undefined && !(indexName instanceof Source)) {
-			throw new TypeError('Expected indexName to be a Source object');
+		if (indexName !== undefined && typeof indexName !== 'string') {
+			throw new TypeError('Expected indexName to be a string');
 		}
 		if (!Array.isArray(children)) {
 			throw new TypeError('Expected children to be an array');
@@ -129,18 +136,20 @@ class IncludeNode extends Node {
 class SlotNode extends Node {
 	constructor(source, name) {
 		super(source);
-		if (name !== undefined && !(name instanceof Source)) {
-			throw new TypeError('Expected name to be a Source object');
+		if (typeof name !== 'string') {
+			throw new TypeError('Expected name to be a string');
 		}
 		this.name = name;
+		this.children = [];
+		this.refs = new Map();
 	}
 }
 
 class SectionNode extends Node {
 	constructor(source, name, children) {
 		super(source);
-		if (!(name instanceof Source)) {
-			throw new TypeError('Expected name to be a Source object');
+		if (typeof name !== 'string') {
+			throw new TypeError('Expected name to be a string');
 		}
 		if (!Array.isArray(children)) {
 			throw new TypeError('Expected children to be an array');

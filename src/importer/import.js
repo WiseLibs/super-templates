@@ -3,7 +3,7 @@ const { File } = require('../source');
 const { parse, ast } = require('../parser');
 
 /*
-	Returns the combined AST of all imported template files, starting with one
+	Returns the combined ASTs of all imported template files, starting with one
 	initial filename.
  */
 
@@ -28,9 +28,8 @@ module.exports = (initialFilename, resolve, load) => {
 				for (const node of nodes) {
 					if (node instanceof ast.IncludeNode) {
 						node.ref = importFile(resolve(node.path, filename), node.js);
-					} else if (node.children) {
-						processIncludes(node.children);
 					}
+					processIncludes(node.children);
 				}
 			};
 
@@ -42,7 +41,7 @@ module.exports = (initialFilename, resolve, load) => {
 					return nodes;
 				}, (err) => {
 					if (source && err.syscall) {
-						if (err.code = 'ENOENT') {
+						if (err.code === 'ENOENT') {
 							source.error(`Could not resolve "${filename}"`).throw();
 						}
 						source.error(err.message).throw();
@@ -71,11 +70,12 @@ async function unwrapPromises(nodes) {
 		if (node instanceof ast.IncludeNode) {
 			if (node.ref instanceof Promise) {
 				node.ref = await node.ref;
+				await unwrapPromises(node.children);
 				await unwrapPromises(node.ref);
 			} else if (!Array.isArray(node.ref)) {
 				throw new TypeError('IncludeNode ref should be an array');
 			}
-		} else if (node.children) {
+		} else {
 			await unwrapPromises(node.children);
 		}
 	}
