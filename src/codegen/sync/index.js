@@ -3,8 +3,11 @@ const { ast } = require('../../parser');
 const CodegenContext = require('./context');
 const gen = require('./codegen');
 
-// TODO: add source location to errors thrown by check()
-// TODO: add source location to errors thrown by user-defined JS
+/*
+	Generates the code for a synchronous-only template.
+	TODO: add source location to errors thrown by check()
+	TODO: add source location to errors thrown by user-defined JS
+ */
 
 module.exports = (rootAST) => {
 	if (!Array.isArray(rootAST)) {
@@ -15,7 +18,6 @@ module.exports = (rootAST) => {
 	const ctx = new CodegenContext();
 	const code = [];
 	code.push(gen.STRICT);
-	// code.push(gen.WRITE);
 	code.push(gen.CHECK);
 	code.push(gen.ESCAPE);
 	code.push(gen.SCOPE);

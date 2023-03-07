@@ -148,7 +148,6 @@ exports.js = (js, ctx) => {
 };
 
 exports.STRICT = '\'use strict\';\n';
-exports.WRITE = 'let write;\n';
 
 exports.CHECK = (
 	'const check = (value) => {\n\t'

@@ -1,5 +1,10 @@
 'use strict';
 
+/*
+	The context passed around to each code-generating function, used to generate
+	unique names for entities within the generated code.
+ */
+
 module.exports = class CodegenContext {
 	constructor() {
 		this._names = new Map();
