@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "acorn": "^8.8.2",
+    "acorn-walk": "^8.2.0",
     "string-width": "^4.2.3"
   }
 }

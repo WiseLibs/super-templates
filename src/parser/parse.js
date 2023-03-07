@@ -1,4 +1,5 @@
 'use strict';
+const walkJS = require('acorn-walk');
 const { File } = require('../source');
 const ast = require('./ast');
 const Parser = require('./parser');
@@ -48,7 +49,7 @@ function blockContent(parser, strictBlock, allowSections = false, allowElse = fa
 		}
 		if (parser.accept('{{')) {
 			if (!comment(parser)) {
-				const node = interpolation(parser, allowSections);
+				const node = interpolation(parser);
 				if (node instanceof ast.SectionNode && !allowSections) {
 					node.source.error('Illegal \'section\' block').throw();
 				}
@@ -95,12 +96,12 @@ function comment(parser) {
 	return false;
 }
 
-function interpolation(parser, allowSections = false) {
+function interpolation(parser) {
 	const start = parser.getCaptured();
 	if (parser.accept('>')) return includeTag(parser, start);
 	if (parser.accept(IDENT)) {
 		const keyword = parser.getCaptured().string();
-		if (keyword === 'let') return letBlock(parser, start, allowSections);
+		if (keyword === 'let') return letBlock(parser, start);
 		if (keyword === 'if') return ifBlock(parser, start);
 		if (keyword === 'each') return eachBlock(parser, start);
 		if (keyword === 'transform') return transformBlock(parser, start);
@@ -109,38 +110,36 @@ function interpolation(parser, allowSections = false) {
 		if (keyword === 'slot') return slotTag(parser, start);
 		if (keyword === 'end') return endTag(parser, start);
 		if (keyword === 'else') return elseTag(parser, start);
-		if (keyword === 'ignore') return expression(parser, start, 'ignore');
+		if (keyword === 'effect') return expression(parser, start, 'effect');
 		if (keyword === 'UNSAFE_INJECT') return expression(parser, start, 'inject');
 		parser.undo();
 	}
 	return expression(parser, start, 'normal');
 }
 
-function letBlock(parser, start, allowSections = false) {
+function letBlock(parser, start) {
 	parser.accept(WHITESPACE);
 	parser.expect(IDENT);
 	const name = parser.getCaptured().string();
 	parser.accept(WHITESPACE);
-	let js;
+	let js = null;
 	if (parser.accept(':')) {
 		parser.accept(WHITESPACE);
-		parser.expectJavaScript();
-		js = parser.getCaptured();
+		js = jsExpression(parser);
 		parser.accept(WHITESPACE);
 	}
 	parser.expect('}}');
 	const end = parser.getCaptured();
 	const source = start.to(end);
 	const strictBlock = parser.isPreamble() ? null : source;
-	const children = blockContent(parser, strictBlock, allowSections);
+	const children = blockContent(parser, strictBlock);
 	return new ast.LetNode(source, js, name, children);
 }
 
 function ifBlock(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
-	parser.expectJavaScript();
-	const js = parser.getCaptured();
+	const js = jsExpression(parser);
 	parser.accept(WHITESPACE);
 	parser.expect('}}');
 	const end = parser.getCaptured();
@@ -170,7 +169,7 @@ function eachBlock(parser, start) {
 	parser.accept(WHITESPACE);
 	parser.expect(IDENT);
 	const name = parser.getCaptured().string();
-	let indexName;
+	let indexName = null;
 	parser.accept(WHITESPACE);
 	if (parser.accept(',')) {
 		parser.accept(WHITESPACE);
@@ -180,8 +179,7 @@ function eachBlock(parser, start) {
 	}
 	parser.expect(':');
 	parser.accept(WHITESPACE);
-	parser.expectJavaScript();
-	const js = parser.getCaptured();
+	const js = jsExpression(parser);
 	parser.accept(WHITESPACE);
 	parser.expect('}}');
 	const end = parser.getCaptured();
@@ -193,8 +191,7 @@ function eachBlock(parser, start) {
 function transformBlock(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
-	parser.expectJavaScript();
-	const js = parser.getCaptured();
+	const js = jsExpression(parser);
 	parser.accept(WHITESPACE);
 	parser.expect('}}');
 	const end = parser.getCaptured();
@@ -205,11 +202,7 @@ function transformBlock(parser, start) {
 
 function includeBlock(parser, start) {
 	parser.accept(WHITESPACE);
-	const parsedJS = parser.expectJavaScript();
-	const js = parser.getCaptured();
-	if (parsedJS.type !== 'Literal' || typeof parsedJS.value !== 'string') {
-		js.error('Include path must be a string literal').throw();
-	}
+	const [js, path] = jsIncludePath(parser);
 	parser.accept(WHITESPACE);
 	const bindings = includeBindings(parser);
 	parser.expect('}}');
@@ -217,7 +210,7 @@ function includeBlock(parser, start) {
 	const source = start.to(end);
 	const strictBlock = parser.isPreamble() ? null : source;
 	const children = blockContent(parser, strictBlock, true);
-	return new ast.IncludeNode(source, js, parsedJS.value, bindings, children);
+	return new ast.IncludeNode(source, js, path, bindings, children);
 }
 
 function includeBindings(parser) {
@@ -233,8 +226,7 @@ function includeBindings(parser) {
 		parser.accept(WHITESPACE);
 		parser.expect(':');
 		parser.accept(WHITESPACE);
-		parser.expectJavaScript();
-		const js = parser.getCaptured();
+		const js = jsExpression(parser);
 		parser.accept(WHITESPACE);
 		bindings.push({ source, name, js });
 	}
@@ -278,14 +270,13 @@ function endTag(parser, start) {
 function elseTag(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
-	let js;
+	let js = null;
 	if (parser.accept(IDENT)) {
 		if (parser.getCaptured().string() !== 'if') {
 			parser.getCaptured().error('Unexpected identifier').throw();
 		}
 		parser.accept(WHITESPACE);
-		parser.expectJavaScript();
-		js = parser.getCaptured();
+		js = jsExpression(parser);
 		parser.accept(WHITESPACE);
 	}
 	parser.expect('}}');
@@ -296,23 +287,18 @@ function elseTag(parser, start) {
 function includeTag(parser, start) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
-	const parsedJS = parser.expectJavaScript();
-	const js = parser.getCaptured();
-	if (parsedJS.type !== 'Literal' || typeof parsedJS.value !== 'string') {
-		js.error('Include path must be a string literal').throw();
-	}
+	const [js, path] = jsIncludePath(parser);
 	parser.accept(WHITESPACE);
 	const bindings = includeBindings(parser);
 	parser.expect('}}');
 	const end = parser.getCaptured();
-	return new ast.IncludeNode(start.to(end), js, parsedJS.value, bindings, []);
+	return new ast.IncludeNode(start.to(end), js, path, bindings, []);
 }
 
 function expression(parser, start, type) {
 	parser.endPreamble();
 	parser.accept(WHITESPACE);
-	parser.expectJavaScript();
-	const js = parser.getCaptured();
+	const js = jsExpression(parser);
 	parser.accept(WHITESPACE);
 	parser.expect('}}');
 	const end = parser.getCaptured();
@@ -325,4 +311,35 @@ function literal(parser) {
 		parser.endPreamble();
 	}
 	return new ast.LiteralNode(source);
+}
+
+function jsExpression(parser) {
+	const names = getJSNames(parser.expectJavaScript());
+	const source = parser.getCaptured();
+	return { source, names };
+}
+
+function jsIncludePath(parser) {
+	const parsedJS = parser.expectJavaScript();
+	const source = parser.getCaptured();
+	if (parsedJS.type !== 'Literal' || typeof parsedJS.value !== 'string') {
+		source.error('Include path must be a string literal').throw();
+	}
+	return [{ source, names: new Set() }, parsedJS.value];
+}
+
+// Returns the names of all referenced identifiers within the given JS AST.
+function getJSNames(parsedJS) {
+	const names = new Set();
+	walkJS.simple(parsedJS, {
+		Identifier(node) {
+			names.add(node.name);
+		},
+		AssignmentExpression(node) {
+			if (node.left.type === 'Identifier') {
+				names.add(node.left.name);
+			}
+		},
+	});
+	return names;
 }

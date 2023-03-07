@@ -27,7 +27,7 @@ module.exports = (initialFilename, resolve, load) => {
 			const processIncludes = (nodes) => {
 				for (const node of nodes) {
 					if (node instanceof ast.IncludeNode) {
-						node.ref = importFile(resolve(node.path, filename), node.js);
+						node.ref = importFile(resolve(node.path, filename), node.js.source);
 					}
 					processIncludes(node.children);
 				}

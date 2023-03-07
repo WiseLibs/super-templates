@@ -24,11 +24,11 @@ class LiteralNode extends Node {
 class ExpressionNode extends Node {
 	constructor(source, js, type) {
 		super(source);
-		if (!(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object' || js === null) {
+			throw new TypeError('Expected js to be an object');
 		}
-		if (type !== 'normal' && type !== 'ignore' && type !== 'inject') {
-			throw new TypeError('Expected type to be "normal", "ignore", or "inject"');
+		if (type !== 'normal' && type !== 'effect' && type !== 'inject') {
+			throw new TypeError('Expected type to be "normal", "effect", or "inject"');
 		}
 		this.js = js;
 		this.type = type;
@@ -39,8 +39,8 @@ class ExpressionNode extends Node {
 class LetNode extends Node {
 	constructor(source, js, name, children) {
 		super(source);
-		if (js !== undefined && !(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object') {
+			throw new TypeError('Expected js to be an object or null');
 		}
 		if (typeof name !== 'string') {
 			throw new TypeError('Expected name to be a string');
@@ -51,15 +51,14 @@ class LetNode extends Node {
 		this.js = js;
 		this.name = name;
 		this.children = children;
-		this.refs = new Map();
 	}
 }
 
 class IfNode extends Node {
 	constructor(source, js, trueBranch, falseBranch) {
 		super(source);
-		if (!(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object' || js === null) {
+			throw new TypeError('Expected js to be an object');
 		}
 		if (!Array.isArray(trueBranch)) {
 			throw new TypeError('Expected trueBranch to be an array');
@@ -77,14 +76,14 @@ class IfNode extends Node {
 class EachNode extends Node {
 	constructor(source, js, name, indexName, children) {
 		super(source);
-		if (!(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object' || js === null) {
+			throw new TypeError('Expected js to be an object');
 		}
 		if (typeof name !== 'string') {
 			throw new TypeError('Expected name to be a string');
 		}
-		if (indexName !== undefined && typeof indexName !== 'string') {
-			throw new TypeError('Expected indexName to be a string');
+		if (indexName !== null && typeof indexName !== 'string') {
+			throw new TypeError('Expected indexName to be a string or null');
 		}
 		if (!Array.isArray(children)) {
 			throw new TypeError('Expected children to be an array');
@@ -99,8 +98,8 @@ class EachNode extends Node {
 class TransformNode extends Node {
 	constructor(source, js, children) {
 		super(source);
-		if (!(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object' || js === null) {
+			throw new TypeError('Expected js to be an object');
 		}
 		if (!Array.isArray(children)) {
 			throw new TypeError('Expected children to be an array');
@@ -113,8 +112,8 @@ class TransformNode extends Node {
 class IncludeNode extends Node {
 	constructor(source, js, path, bindings, children) {
 		super(source);
-		if (!(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object' || js === null) {
+			throw new TypeError('Expected js to be an object');
 		}
 		if (typeof path !== 'string') {
 			throw new TypeError('Expected path to be a string');
@@ -129,6 +128,7 @@ class IncludeNode extends Node {
 		this.path = path;
 		this.bindings = bindings;
 		this.children = children;
+		this.sections = undefined;
 		this.ref = undefined;
 	}
 }
@@ -141,7 +141,6 @@ class SlotNode extends Node {
 		}
 		this.name = name;
 		this.children = [];
-		this.refs = new Map();
 	}
 }
 
@@ -162,8 +161,8 @@ class SectionNode extends Node {
 class ElseNode extends Node {
 	constructor(source, js) {
 		super(source);
-		if (js !== undefined && !(js instanceof Source)) {
-			throw new TypeError('Expected js to be a Source object');
+		if (typeof js !== 'object') {
+			throw new TypeError('Expected js to be an object or null');
 		}
 		this.js = js;
 	}

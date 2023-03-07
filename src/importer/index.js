@@ -2,12 +2,11 @@
 const fs = require('fs/promises');
 const path = require('path');
 const importAST = require('./import');
-const link = require('./link');
+const validate = require('./validate');
 
 /*
 	Returns the combined ASTs of all imported template files, starting with one
-	initial filename, and links all slots and template parameters in all
-	included templates.
+	initial filename, and validates all imported ASTs.
  */
 
 exports.import = async (filename, options = {}) => {
@@ -28,7 +27,7 @@ exports.import = async (filename, options = {}) => {
 	}
 
 	const nodes = await importAST(filename, resolve, load);
-	link(nodes);
+	validate(nodes);
 	return nodes;
 };
 
