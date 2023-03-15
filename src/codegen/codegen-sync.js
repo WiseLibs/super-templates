@@ -2,7 +2,7 @@
 const { ast } = require('../parser');
 
 /*
-	Here we define the code generated for a compiled template.
+	Here we define the code generated for a synchronous-only compiled template.
  */
 
 exports.node = new Map([
