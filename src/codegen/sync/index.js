@@ -16,13 +16,16 @@ module.exports = (rootAST) => {
 
 	const visited = new Set([rootAST]);
 	const ctx = new CodegenContext();
-	const code = [];
-	code.push(gen.STRICT);
-	code.push(gen.CHECK);
-	code.push(gen.ESCAPE);
-	code.push(gen.SCOPE);
+	const code = ['"use strict";\n'];
+	const queue = [rootAST];
 
-	(function walk(nodes) {
+	while (queue.length) {
+		const theAST = queue.shift();
+		code.push(gen.ast(theAST, ctx));
+		walk(theAST);
+	}
+
+	function walk(nodes) {
 		for (const node of nodes) {
 			code.push(gen.node.get(node.constructor)(node, ctx));
 
@@ -38,17 +41,16 @@ module.exports = (rootAST) => {
 				}
 				if (!visited.has(node.ref)) {
 					visited.add(node.ref);
-					walk(node.ref);
+					queue.push(node.ref);
 				}
 			} else {
 				node.js && code.push(gen.js(node.js, ctx));
 				walk(node.children);
 			}
 		}
-	})(rootAST);
+	}
 
-	code.push(gen.INITIAL_SCOPE);
-	code.push(...rootAST.map(node => `${ctx.name(node)}(initialScope);\n`));
+	code.push(gen.root(rootAST, ctx));
 
 	return code.join('');
 };

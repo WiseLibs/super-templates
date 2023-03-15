@@ -50,15 +50,14 @@ function findNames(theAST, isRootAST) {
 
 // Returns a Source object for the first actual content within the given AST,
 // besides section blocks and whitespace/comments.
-const NOT_WHITESPACE = /[^\x09\x0b\x0c\ufeff\x0a\x0d\u2028\u2029\p{Space_Separator}]/u;
 function findContent(nodes) {
 	for (const node of nodes) {
 		if (node instanceof ast.LiteralNode) {
-			const index = node.source.string().search(NOT_WHITESPACE);
+			const index = node.indexOfContent();
 			if (index !== -1) {
-				return node.source.file.at(node.source.start + index, 1);
+				return node.source.file.at(index, 1);
 			}
-		} else if (node instanceof ast.LetNode) {
+		} else if (node instanceof ast.LineNode || node instanceof ast.LetNode) {
 			const contentSource = findContent(node.children);
 			if (contentSource) return contentSource;
 		} else if (!(node instanceof ast.SectionNode)) {
@@ -66,6 +65,18 @@ function findContent(nodes) {
 		}
 	}
 	return null;
+}
+
+// Finds all SectionNodes within the given AST, which is expected to be the
+// children of an IncludeNode.
+function* findSections(nodes) {
+	for (const node of nodes) {
+		if (node instanceof ast.SectionNode) {
+			yield node;
+		} else if (node instanceof ast.LineNode || node instanceof ast.LetNode) {
+			yield* findSections(node.children);
+		}
+	}
 }
 
 // Validates the given IncludeNode and links all secitons passed to it.
@@ -83,15 +94,13 @@ function validateInclude(includeNode, { parameterNames, slotNames }) {
 	}
 
 	const sections = new Map();
-	for (const child of includeNode.children) {
-		if (child instanceof ast.SectionNode) {
-			if (sections.has(child.name)) error.duplicateSection(child);
-			if (!slotNames.has(child.name)) error.sectionNotDefined(child);
-			sections.set(child.name, child);
-		}
+	for (const node of findSections(includeNode.children)) {
+		if (sections.has(node.name)) error.duplicateSection(node);
+		if (!slotNames.has(node.name)) error.sectionNotDefined(node);
+		sections.set(node.name, node);
 	}
 	if (slotNames.has('')) {
-		sections.set('', new ast.SectionNode(includeNode.source, '', includeNode.children));
+		sections.set('', new ast.SectionNode({ source: includeNode.source, name: '' }, includeNode.children));
 	} else {
 		const contentSource = findContent(includeNode.children);
 		if (contentSource) error.noDefaultSlot(includeNode, contentSource);

@@ -1,4 +1,6 @@
 'use strict';
+const { tk } = require('../../lexer');
+const { ast } = require('../../parser');
 
 /*
 	The context passed around to each code-generating function, used to generate
@@ -12,8 +14,8 @@ module.exports = class CodegenContext {
 	}
 
 	name(obj) {
-		if (typeof obj !== 'object' || obj === null) {
-			throw new TypeError('Expected obj to be an object');
+		if (!(obj instanceof ast.Node || obj instanceof tk.EmbeddedJS || Array.isArray(obj))) {
+			throw new TypeError('Expected obj to be a Node object, EmbeddedJS object, or array');
 		}
 		let name = this._names.get(obj);
 		if (name === undefined) {
