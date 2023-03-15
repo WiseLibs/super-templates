@@ -1,5 +1,5 @@
 'use strict';
-const { ast } = require('../../parser');
+const { ast } = require('../parser');
 
 /*
 	Computes the variables in scope of each EmbeddedJS within all included ASTs.

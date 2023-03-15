@@ -1,7 +1,9 @@
 'use strict';
-const lib = require('./shared/lib');
+const lib = require('./lib');
+const codegenSync = require('./codegen-sync');
+const generate = require('./generate');
 
-exports.sync = require('./sync');
+exports.sync = (rootAST) => generate(rootAST, codegenSync);
 exports.createFunction = (code) => {
 	return new Function(
 		'normalize',

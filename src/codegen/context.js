@@ -1,7 +1,7 @@
 'use strict';
-const { Source, LineMap } = require('../../source');
-const { tk } = require('../../lexer');
-const { ast } = require('../../parser');
+const { Source, LineMap } = require('../source');
+const { tk } = require('../lexer');
+const { ast } = require('../parser');
 
 /*
 	The context passed around to each code-generating function, used to generate

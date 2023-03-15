@@ -1,14 +1,13 @@
 'use strict';
-const { ast } = require('../../parser');
-const CodegenContext = require('../shared/context');
-const computeScopes = require('../shared/compute-scopes');
-const gen = require('./codegen');
+const { ast } = require('../parser');
+const CodegenContext = require('./context');
+const computeScopes = require('./compute-scopes');
 
 /*
-	Generates the code for a synchronous-only template.
+	Generates the code for a given template AST.
  */
 
-module.exports = (rootAST) => {
+module.exports = (rootAST, codegen) => {
 	if (!Array.isArray(rootAST)) {
 		throw new TypeError('Expected rootAST to be an array');
 	}
@@ -22,17 +21,17 @@ module.exports = (rootAST) => {
 
 	while (queue.length) {
 		const theAST = queue.shift();
-		code.push(gen.ast(theAST, ctx));
+		code.push(codegen.ast(theAST, ctx));
 		walk(theAST);
 	}
 
 	function walk(nodes) {
 		for (const node of nodes) {
-			code.push(gen.node.get(node.constructor)(node, ctx));
+			code.push(codegen.node.get(node.constructor)(node, ctx));
 
 			if (node instanceof ast.IncludeNode) {
 				for (const binding of node.bindings) {
-					code.push(gen.js(binding.js, ctx));
+					code.push(codegen.js(binding.js, ctx));
 				}
 				const implicitSection = node.sections.find(x => x.name === '');
 				if (implicitSection) {
@@ -45,13 +44,13 @@ module.exports = (rootAST) => {
 					queue.push(node.ref);
 				}
 			} else {
-				node.js && code.push(gen.js(node.js, ctx));
+				node.js && code.push(codegen.js(node.js, ctx));
 				walk(node.children);
 			}
 		}
 	}
 
-	code.push(gen.root(rootAST, ctx));
+	code.push(codegen.root(rootAST, ctx));
 
 	return code.join('');
 };
