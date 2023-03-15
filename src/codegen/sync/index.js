@@ -1,6 +1,7 @@
 'use strict';
 const { ast } = require('../../parser');
-const CodegenContext = require('./context');
+const CodegenContext = require('../shared/context');
+const computeScopes = require('../shared/compute-scopes');
 const gen = require('./codegen');
 
 /*
@@ -11,6 +12,8 @@ module.exports = (rootAST) => {
 	if (!Array.isArray(rootAST)) {
 		throw new TypeError('Expected rootAST to be an array');
 	}
+
+	computeScopes(rootAST);
 
 	const visited = new Set([rootAST]);
 	const ctx = new CodegenContext();

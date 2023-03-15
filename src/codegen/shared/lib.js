@@ -197,31 +197,29 @@ exports.Scope = class Scope {
 	formatted error will be raised, containing the source location.
  */
 
-exports.trace = (fn, location, keepMessage) => {
+exports.trace = (fn, location, isEmbeddedJS) => {
 	return (arg) => {
 		try {
 			return fn(arg);
 		} catch (err) {
-			throw createRuntimeError(err, location, keepMessage);
+			throw createRuntimeError(err, location, isEmbeddedJS);
 		}
 	};
 };
 
-function createRuntimeError(err, location, keepMessage) {
-	const message = keepMessage
-		? `${err && err.message}\n    (${location})`
-		: `Unexpected error in template's embedded JavaScript:\n    ${String(err && err.message)}\n    (${location})`;
+function createRuntimeError(err, location, isEmbeddedJS) {
+	const extraMessage = isEmbeddedJS ? '\nUnexpected error in template\'s embedded JavaScript' : '';
 
 	if (err instanceof Error) {
-		err.message = message;
-		err.stack = String(err) + (err.stack || '')
+		err.message += extraMessage;
+		err.stack = `${err}\n    at ${location}` + (err.stack || '')
 			.split(/\r?\n/)
 			.filter(str => /^\s+at (?!ft_\d+)/.test(str))
 			.map(str => '\n' + str)
 			.join('')
 	} else {
-		err = new Error(message);
-		err.stack = String(err);
+		err = new Error(String(err) + extraMessage);
+		err.stack = `${err}\n    at ${location}`;
 	}
 
 	return err;

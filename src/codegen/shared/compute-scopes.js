@@ -2,9 +2,10 @@
 const { ast } = require('../../parser');
 
 /*
-	Computes the dependencies of each JavaScript expression in each included
-	AST. Each depenendecy is a LetNode/EachNode that provides a variable needed
-	by the JavaScript expression.
+	Computes the variables in scope of each EmbeddedJS within all included ASTs.
+	Also, the scopes are compared to the identifiers referenced in each
+	expression, in order to compute which AST nodes are dependencies of each
+	EmbeddedJS object.
  */
 
 module.exports = (rootAST) => {
@@ -14,11 +15,13 @@ module.exports = (rootAST) => {
 		(function walk(nodes) {
 			for (const node of nodes) {
 				if (node.js) {
-					lookupDependencies(node.js);
+					node.js.scope = [...scope.keys()];
+					node.js.dependencies = lookupDependencies(node.js);
 				}
 				if (node instanceof ast.IncludeNode) {
 					for (const binding of node.bindings) {
-						lookupDependencies(binding.js);
+						binding.js.scope = [...scope.keys()];
+						binding.js.dependencies = lookupDependencies(binding.js);
 					}
 					walk(node.children);
 					if (!visited.has(node.ref)) {
@@ -33,7 +36,12 @@ module.exports = (rootAST) => {
 					const newScope = new Map(scope);
 					newScope.set(node.name, node);
 					node.indexName && newScope.set(node.indexName, node);
-					walkInScope(node.children, newScope);
+					walkInScope(node.trueBranch, newScope);
+					walk(node.falseBranch);
+				} else if (node instanceof ast.TransformNode) {
+					if (!scope.has('__block')) {
+						node.js.scope.push('__block');
+					}
 				} else {
 					walk(node.children);
 				}
@@ -41,13 +49,14 @@ module.exports = (rootAST) => {
 		})(theAST);
 
 		function lookupDependencies(js) {
-			js.dependencies = [];
+			const dependencies = [];
 			for (const name of js.names) {
 				// TODO: this could result in a false positive if the JS expression
 				// has names that refer to declarations in inline function literals
 				const node = scope.get(name);
-				if (node) js.dependencies.push(node);
+				if (node) dependencies.push(node);
 			}
+			return dependencies;
 		}
 	})(rootAST, new Map());
 };

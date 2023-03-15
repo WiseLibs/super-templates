@@ -49,7 +49,7 @@ exports.node = new Map([
 				`function* ${ctx.name(node)}(scope) {\n`
 					+ `\tyield* ${ctx.name(node)}_norm(${ctx.name(node.js)}(scope));\n`
 				+ '}\n'
-				+ `const ${ctx.name(node)}_norm = trace((x) => normalize(x, ${isRaw}), ${location}, true);\n`
+				+ `const ${ctx.name(node)}_norm = trace((x) => normalize(x, ${isRaw}), ${location}, false);\n`
 			);
 		}
 		if (node.type === 'effect') {
@@ -178,7 +178,7 @@ exports.node = new Map([
 				+ `\tyield* ${ctx.name(node)}_norm(${ctx.name(node.js)}(newScope));\n`
 			+ '}\n'
 			+ blockContent(node.children, ctx)
-			+ `const ${ctx.name(node)}_norm = trace((x) => normalize(x, true), ${location}, true);\n`
+			+ `const ${ctx.name(node)}_norm = trace((x) => normalize(x, true), ${location}, false);\n`
 		);
 	}],
 	[ast.IncludeNode, (node, ctx) => {
@@ -226,31 +226,16 @@ exports.node = new Map([
 ]);
 
 exports.js = (js, ctx) => {
-	// TODO: for this to work, we need to make sure that all js.names are within
-	// the scope at runtime. That means we need to know all allowed globals,
-	// create vars via Object.create(globals), and throw compile-time errors when
-	// JS code references an unknown name (not in scope or globals). However, since
-	// we can get false positives when detecting JS names, we need to prevent all
-	// expressions from containing functions or statements.
-	// Alternatively, we could only provide the names that are in scope (which we
-	// would have to calculate for each js instance), and generate all other names
-	// such that they won't collide with any names within any JS expressions.
-	// Therefore, references to globals would work implicitly, but we wouldn't be
-	// able to catch reference errors at compile-time.
 	const location = JSON.stringify(ctx.location(js.source));
-	if (js.names.size) {
-		return (
-			`const ${ctx.name(js)} = trace(({ vars: { ${[...js.names].join(', ')} } }) => (\n`
-				+ `${js.source.string()}\n`
-			+ `), ${location}, false);\n`
-		);
-	} else {
-		return (
-			`const ${ctx.name(js)} = trace(() => (\n`
-				+ `${js.source.string()}\n`
-			+ `), ${location}, false);\n`
-		);
-	}
+	const body = JSON.stringify(js.source.string());
+	const params = js.scope.length
+		? JSON.stringify(`{ vars: { ${js.scope.join(', ')} } }`) + ', '
+		: '';
+	return (
+		`const ${ctx.name(js)} = trace(\n`
+			+ `\tnew Function(${params}\`return (\\n\${${body}}\\n);\`)\n`
+		+ `, ${location}, true);\n`
+	);
 };
 
 exports.ast = blockContent;

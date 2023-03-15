@@ -1,7 +1,7 @@
 {
   "name": "functional-templates",
   "version": "1.0.0",
-  "description": "A functional HTML/XML templating system for JavaScript",
+  "description": "A functional HTML/XML templating system for Node.js",
   "author": "Joshua Wise <joshuathomaswise@gmail.com>",
   "homepage": "https://github.com/JoshuaWise/functional-templates#readme",
   "repository": {
