@@ -191,3 +191,38 @@ exports.Scope = class Scope {
 		return scope;
 	}
 };
+
+/*
+	Wraps the given function so that if it throws an exception, a nicely
+	formatted error will be raised, containing the source location.
+ */
+
+exports.trace = (fn, location, keepMessage) => {
+	return (arg) => {
+		try {
+			return fn(arg);
+		} catch (err) {
+			throw createRuntimeError(err, location, keepMessage);
+		}
+	};
+};
+
+function createRuntimeError(err, location, keepMessage) {
+	const message = keepMessage
+		? `${err && err.message}\n    (${location})`
+		: `Unexpected error in template's embedded JavaScript:\n    ${String(err && err.message)}\n    (${location})`;
+
+	if (err instanceof Error) {
+		err.message = message;
+		err.stack = String(err) + (err.stack || '')
+			.split(/\r?\n/)
+			.filter(str => /^\s+at (?!ft_\d+)/.test(str))
+			.map(str => '\n' + str)
+			.join('')
+	} else {
+		err = new Error(message);
+		err.stack = String(err);
+	}
+
+	return err;
+}

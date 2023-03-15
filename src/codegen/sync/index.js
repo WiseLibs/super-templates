@@ -5,8 +5,6 @@ const gen = require('./codegen');
 
 /*
 	Generates the code for a synchronous-only template.
-	TODO: add source location to errors thrown by check()
-	TODO: add source location to errors thrown by user-defined JS
  */
 
 module.exports = (rootAST) => {

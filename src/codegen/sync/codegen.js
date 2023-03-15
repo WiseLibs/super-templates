@@ -42,18 +42,14 @@ exports.node = new Map([
 		);
 	}],
 	[ast.ExpressionNode, (node, ctx) => {
-		if (node.type === 'normal') {
+		if (node.type === 'normal' || node.type === 'inject') {
+			const location = JSON.stringify(ctx.location(node.source));
+			const isRaw = node.type === 'inject' ? 'true' : 'false';
 			return (
 				`function* ${ctx.name(node)}(scope) {\n`
-					+ `\tyield* normalize(${ctx.name(node.js)}(scope));\n`
+					+ `\tyield* ${ctx.name(node)}_norm(${ctx.name(node.js)}(scope));\n`
 				+ '}\n'
-			);
-		}
-		if (node.type === 'inject') {
-			return (
-				`function* ${ctx.name(node)}(scope) {\n`
-					+ `\tyield* normalize(${ctx.name(node.js)}(scope), true);\n`
-				+ '}\n'
+				+ `const ${ctx.name(node)}_norm = trace((x) => normalize(x, ${isRaw}), ${location}, true);\n`
 			);
 		}
 		if (node.type === 'effect') {
@@ -173,14 +169,16 @@ exports.node = new Map([
 		}
 	}],
 	[ast.TransformNode, (node, ctx) => {
+		const location = JSON.stringify(ctx.location(node.source));
 		return (
 			`function* ${ctx.name(node)}(scope) {\n`
 				+ '\tconst state = { atNewline: true };\n'
 				+ `\tconst blockParts = [...driveState(${ctx.name(node.children)}(scope, state), state)];\n`
 				+ '\tconst newScope = scope.with("__block", blockParts.join(""));\n'
-				+ `\tyield* normalize(${ctx.name(node.js)}(newScope), true);\n`
+				+ `\tyield* ${ctx.name(node)}_norm(${ctx.name(node.js)}(newScope));\n`
 			+ '}\n'
 			+ blockContent(node.children, ctx)
+			+ `const ${ctx.name(node)}_norm = trace((x) => normalize(x, true), ${location}, true);\n`
 		);
 	}],
 	[ast.IncludeNode, (node, ctx) => {
@@ -239,17 +237,18 @@ exports.js = (js, ctx) => {
 	// such that they won't collide with any names within any JS expressions.
 	// Therefore, references to globals would work implicitly, but we wouldn't be
 	// able to catch reference errors at compile-time.
+	const location = JSON.stringify(ctx.location(js.source));
 	if (js.names.size) {
 		return (
-			`const ${ctx.name(js)} = ({ vars: { ${[...js.names].join(', ')} } }) => (\n`
+			`const ${ctx.name(js)} = trace(({ vars: { ${[...js.names].join(', ')} } }) => (\n`
 				+ `${js.source.string()}\n`
-			+ ');\n'
+			+ `), ${location}, false);\n`
 		);
 	} else {
 		return (
-			`const ${ctx.name(js)} = () => (\n`
+			`const ${ctx.name(js)} = trace(() => (\n`
 				+ `${js.source.string()}\n`
-			+ ');\n'
+			+ `), ${location}, false);\n`
 		);
 	}
 };

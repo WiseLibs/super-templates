@@ -7,10 +7,12 @@ exports.createFunction = (code) => {
 		'normalize',
 		'isNewline',
 		'Scope',
+		'trace',
 		code
 	)(
 		lib.normalize,
 		lib.isNewline,
-		lib.Scope
+		lib.Scope,
+		lib.trace
 	);
 };
