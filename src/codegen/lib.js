@@ -8,129 +8,21 @@
 	allowed, but NaN is not allowed.
  */
 
-exports.normalize = (value, isRaw = false) => {
+exports.normalize = (value, location, isRaw = false) => {
 	if (typeof value === 'string') {
-		if (isRaw) return splitLines(value);
-		return splitLines(escapeHTML(value));
+		if (isRaw) return value;
+		return escapeHTML(value);
 	}
 	if (typeof value === 'number') {
-		if (value === value) return [String(value)];
-		throw new TypeError('Template expression returned NaN');
+		if (value === value) return String(value);
+		throw createRuntimeError(new TypeError('Template expression returned NaN'), location);
 	}
 	if (typeof value === 'bigint') {
-		return [String(value)];
+		return String(value);
 	}
 	const type = value === null ? 'null' : typeof value;
-	throw new TypeError(`Template expression returned an invalid type: ${type}`);
+	throw createRuntimeError(new TypeError(`Template expression returned an invalid type: ${type}`), location);
 };
-
-/*
-	This is a highly optimized function that splits a string by line-terminating
-	characters. It takes advantage of the fact that `String.prototype.indexOf`
-	is much faster than RegExp in JavaScript, at least when searching for
-	single-character strings.
-
-	It recognizes line-terminators "\n", "\r\n", "\r", "\u2028", and "\u2029".
- */
-
-function splitLines(str) {
-	if (!str.length) {
-		return [];
-	}
-
-	const results = [];
-
-	let cache1 = -1;
-	let cache2 = -1;
-	let cache3 = -1;
-	let cache4 = -1;
-
-	let position = 0;
-	while (position < str.length) {
-		if (cache1 < 0) {
-			const i = str.indexOf('\n', position);
-			cache1 = i < 0 ? str.length : i;
-		}
-		if (cache2 < 0) {
-			const i = str.indexOf('\r', position);
-			cache2 = i < 0 ? str.length : i;
-		}
-		if (cache3 < 0) {
-			const i = str.indexOf('\u2028', position);
-			cache3 = i < 0 ? str.length : i;
-		}
-		if (cache4 < 0) {
-			const i = str.indexOf('\u2029', position);
-			cache4 = i < 0 ? str.length : i;
-		}
-
-		let index;
-		let match;
-		if (cache1 <= cache2) {
-			if (cache1 <= cache3) {
-				if (cache1 <= cache4) {
-					index = cache1;
-					cache1 = -1;
-					match = '\n';
-				} else {
-					index = cache4;
-					cache4 = -1;
-					match = '\u2029';
-				}
-			} else {
-				if (cache3 <= cache4) {
-					index = cache3;
-					cache3 = -1;
-					match = '\u2028';
-				} else {
-					index = cache4;
-					cache4 = -1;
-					match = '\u2029';
-				}
-			}
-		} else {
-			if (cache2 <= cache3) {
-				if (cache2 <= cache4) {
-					index = cache2;
-					cache2 = -1;
-					if (str[index + 1] === '\n') {
-						cache1 = -1;
-						match = '\r\n';
-					} else {
-						match = '\r';
-					}
-				} else {
-					index = cache4;
-					cache4 = -1;
-					match = '\u2029';
-				}
-			} else {
-				if (cache3 <= cache4) {
-					index = cache3;
-					cache3 = -1;
-					match = '\u2028';
-				} else {
-					index = cache4;
-					cache4 = -1;
-					match = '\u2029';
-				}
-			}
-		}
-
-		if (index === str.length) {
-			results.push(position > 0 ? str.substring(position, index) : str);
-			break;
-		}
-
-		if (index > position) {
-			results.push(str.substring(position, index));
-		}
-		results.push(match);
-		position = index + match.length;
-	}
-
-	return results;
-}
 
 /*
 	This function HTML-escapes the given string. It also works for XML.
@@ -151,40 +43,64 @@ function escapeHTML(str) {
 }
 
 /*
-	Checks whether the given string is a line-terminating sequence.
+	Creates a function that drives state and writes strings to an output array.
  */
 
-exports.isNewline = (str) => {
-	switch (str) {
+const NOT_NEWLINE = /[^\x0a\x0d\u2028\u2029]/u;
+const INDENT_SPOTS = /(?:\x0d\x0a|[\x0a\x0d\u2028\u2029])(?![\x0a\x0d\u2028\u2029]|$)/gu;
+exports.createWriter = (output, state) => (str) => {
+	if (!str) return;
+	if (NOT_NEWLINE.test(str)) {
+		if (state.pendingNewline) {
+			output.push(state.pendingNewline);
+			state.pendingNewline = '';
+			state.atNewline = true;
+		}
+		if (state.indentation) {
+			if (state.atNewline && !isNewline(str[0])) {
+				output.push(state.indentation);
+			}
+			str = str.replace(INDENT_SPOTS, state.indenter);
+		}
+		state.atNewline = isNewline(str[str.length - 1]);
+		state.blockHasContent = true;
+	} else {
+		state.atNewline = true;
+	}
+	output.push(str);
+};
+
+/*
+	Checks whether the given one-character string is a newline character.
+ */
+
+function isNewline(char) {
+	switch (char) {
 		case '\n': return true;
 		case '\r': return true;
-		case '\r\n': return true;
 		case '\u2028': return true;
 		case '\u2029': return true;
 		default: return false;
 	}
-};
+}
 
 /*
-	Scope is used to manage/organize a compiled template's execution context.
-	For example, it stores state regarding the current "let" variables and
-	"include" context.
+	Scope is used to manage/organize a compiled template's variable context.
 	TODO: make this compatible with async codegen
  */
 
 exports.Scope = class Scope {
-	constructor(ctx) {
-		this.ctx = ctx;
+	constructor() {
 		this.vars = Object.create(null);
 	}
 	with(name, value) {
-		const scope = new Scope(this.ctx);
+		const scope = new Scope();
 		Object.assign(scope.vars, this.vars);
 		scope.vars[name] = value;
 		return scope;
 	}
 	withTwo(name1, value1, name2, value2) {
-		const scope = new Scope(this.ctx);
+		const scope = new Scope();
 		Object.assign(scope.vars, this.vars);
 		scope.vars[name1] = value1;
 		scope.vars[name2] = value2;
@@ -197,17 +113,17 @@ exports.Scope = class Scope {
 	formatted error will be raised, containing the source location.
  */
 
-exports.trace = (fn, location, isEmbeddedJS) => {
+exports.trace = (fn, location) => {
 	return (arg) => {
 		try {
 			return fn(arg);
 		} catch (err) {
-			throw createRuntimeError(err, location, isEmbeddedJS);
+			throw createRuntimeError(err, location, true);
 		}
 	};
 };
 
-function createRuntimeError(err, location, isEmbeddedJS) {
+function createRuntimeError(err, location, isEmbeddedJS = false) {
 	const extraMessage = isEmbeddedJS ? '\nUnexpected error in template\'s embedded JavaScript' : '';
 
 	if (err instanceof Error) {

@@ -1,19 +1,18 @@
 'use strict';
 const lib = require('./lib');
-const codegenSync = require('./codegen-sync');
 const generate = require('./generate');
 
-exports.sync = (rootAST) => generate(rootAST, codegenSync);
+exports.sync = (rootAST) => generate(rootAST);
 exports.createFunction = (code) => {
 	return new Function(
 		'normalize',
-		'isNewline',
+		'createWriter',
 		'Scope',
 		'trace',
 		code
 	)(
 		lib.normalize,
-		lib.isNewline,
+		lib.createWriter,
 		lib.Scope,
 		lib.trace
 	);
