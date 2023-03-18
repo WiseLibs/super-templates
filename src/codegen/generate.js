@@ -66,7 +66,7 @@ module.exports = (rootAST) => {
 			yield '\tif (blockHasContent) state.pendingNewline = "";';
 			yield '}';
 		} else if (node instanceof asm.DynamicIndentation) {
-			// TODO: this doesn't indent accurately for DynamicIncludes
+			// TODO: this doesn't indent accurately for DynamicIncludes and sections
 			yield '{';
 			yield '\tconst originalIndentation = state.indentation;';
 			yield '\tconst originalIndenter = state.indenter;';
@@ -149,8 +149,17 @@ module.exports = (rootAST) => {
 			// TODO
 			// throw new TypeError('EachBlock unimplemented');
 		} else if (node instanceof asm.TransformBlock) {
-			// TODO
-			// throw new TypeError('TransformBlock unimplemented');
+			yield '{';
+			yield '\tconst output = [];';
+			yield '\t{'
+			yield '\t\tconst state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "", indenter: "$&" };';
+			yield '\t\tconst write = createWriter(output, state);';
+			yield* indent(indent(genAll(node.children)));
+			yield '\t}'
+			yield '\tconst newScope = scope.with("__block", output.join(""));'
+			yield `\twrite(normalize(${ctx.name(node.js)}(newScope), ${JSON.stringify(ctx.location(node.js.source))}, true));`;
+			yield '}';
+			jsFuncs.push(node.js);
 		} else if (node instanceof asm.TemplateFunc) {
 			yield `function ${ctx.name(node)}(write, state, ctx) {`;
 			yield '\tconst scope = new Scope();';

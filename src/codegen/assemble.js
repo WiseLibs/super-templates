@@ -77,7 +77,7 @@ module.exports = (rootAST) => {
 			}
 			if (node instanceof ast.TransformNode) {
 				const js = new asm.JSFunc(node.js.source, node.js.dependencyNames);
-				const children = node.children.flatMap(convert);
+				const children = node.children.flatMap(convertWithIndentation(''));
 				const block = new asm.TransformBlock(js, [new asm.DynamicBlock(children)]);
 				if (!indentation) return block;
 				return new asm.DynamicIndentation(indentation, [block]);
