@@ -2,6 +2,12 @@
 const { ast } = require('../parser');
 const asm = require('./asm');
 
+/*
+	Generates the intermediate-representation (IR) of a functional template,
+	given its AST.
+	TODO: clean up this file a bit
+ */
+
 module.exports = (rootAST) => {
 	if (!Array.isArray(rootAST)) {
 		throw new TypeError('Expected rootAST to be an array');
@@ -130,6 +136,7 @@ module.exports = (rootAST) => {
 	}
 };
 
+// Returns the set of included ASTs which are recursive.
 function findRecursiveASTs(rootAST) {
 	const recursive = new Set();
 

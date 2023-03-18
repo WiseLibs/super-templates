@@ -3,12 +3,11 @@
 /*
 	This function checks that the given value is something that can be inserted
 	into a template, HTML-escapes it (unless `isRaw` is true), and returns it as
-	an array of strings, such that line-terminating sequences are separated from
-	the other parts of the string. Only strings, numbers, and bigints are
-	allowed, but NaN is not allowed.
+	a string. A source location is needed in case of error.
+	Only strings, numbers, and bigints are allowed, but NaN is not allowed.
  */
 
-exports.normalize = (value, location, isRaw = false) => {
+function normalize(value, location, isRaw = false) {
 	if (typeof value === 'string') {
 		if (isRaw) return value;
 		return escapeHTML(value);
@@ -22,7 +21,7 @@ exports.normalize = (value, location, isRaw = false) => {
 	}
 	const type = value === null ? 'null' : typeof value;
 	throw createRuntimeError(new TypeError(`Template expression returned an invalid type: ${type}`), location);
-};
+}
 
 /*
 	This function HTML-escapes the given string. It also works for XML.
@@ -31,7 +30,7 @@ exports.normalize = (value, location, isRaw = false) => {
  */
 
 function escapeHTML(str) {
-	if (!str.length) {
+	if (!str) {
 		return str;
 	}
 	return str
@@ -43,38 +42,42 @@ function escapeHTML(str) {
 }
 
 /*
-	Creates a function that drives state and writes strings to an output array.
+	Creates a "write()" function, which drives the given template state, handles
+	dynamic indentation and dynamic newlines, and pushes the resulting strings
+	into the given output array.
  */
 
 const NOT_NEWLINE = /[^\x0a\x0d\u2028\u2029]/u;
 const INDENT_SPOTS = /(?:\x0d\x0a|[\x0a\x0d\u2028\u2029])(?![\x0a\x0d\u2028\u2029]|$)/gu;
-exports.createWriter = (output, state) => (str) => {
-	if (!str) return;
-	if (NOT_NEWLINE.test(str)) {
-		if (state.pendingNewline) {
-			output.push(state.pendingNewline);
-			state.pendingNewline = '';
+function createWriter(output, state) {
+	return (str) => {
+		if (!str) return;
+		if (NOT_NEWLINE.test(str)) {
+			if (state.pendingNewline) {
+				output.push(state.pendingNewline);
+				state.pendingNewline = '';
+				state.atNewline = true;
+			}
+			if (state.indentation) {
+				if (state.atNewline && !isNewlineChar(str[0])) {
+					output.push(state.indentation);
+				}
+				str = str.replace(INDENT_SPOTS, state.indenter);
+			}
+			state.atNewline = isNewlineChar(str[str.length - 1]);
+			state.blockHasContent = true;
+		} else {
 			state.atNewline = true;
 		}
-		if (state.indentation) {
-			if (state.atNewline && !isNewline(str[0])) {
-				output.push(state.indentation);
-			}
-			str = str.replace(INDENT_SPOTS, state.indenter);
-		}
-		state.atNewline = isNewline(str[str.length - 1]);
-		state.blockHasContent = true;
-	} else {
-		state.atNewline = true;
-	}
-	output.push(str);
-};
+		output.push(str);
+	};
+}
 
 /*
 	Checks whether the given one-character string is a newline character.
  */
 
-function isNewline(char) {
+function isNewlineChar(char) {
 	switch (char) {
 		case '\n': return true;
 		case '\r': return true;
@@ -89,7 +92,7 @@ function isNewline(char) {
 	TODO: make this compatible with async codegen
  */
 
-exports.Scope = class Scope {
+class Scope {
 	constructor() {
 		this.vars = Object.create(null);
 	}
@@ -106,22 +109,23 @@ exports.Scope = class Scope {
 		scope.vars[name2] = value2;
 		return scope;
 	}
-};
+}
 
 /*
-	Wraps the given function so that if it throws an exception, a nicely
-	formatted error will be raised, containing the source location.
+	Wraps the given function (which should be an embedded/compiled JSFunc) so
+	that if it throws an exception, a nicely formatted error will be raised,
+	containing the source location.
  */
 
-exports.trace = (fn, location) => {
-	return (arg) => {
+function trace(fn, location) {
+	return function ft_trace(arg) {
 		try {
 			return fn(arg);
 		} catch (err) {
 			throw createRuntimeError(err, location, true);
 		}
 	};
-};
+}
 
 function createRuntimeError(err, location, isEmbeddedJS = false) {
 	const extraMessage = isEmbeddedJS ? '\nUnexpected error in template\'s embedded JavaScript' : '';
@@ -130,7 +134,7 @@ function createRuntimeError(err, location, isEmbeddedJS = false) {
 		err.message += extraMessage;
 		err.stack = `${err}\n    at ${location}` + (err.stack || '')
 			.split(/\r?\n/)
-			.filter(str => /^\s+at (?!ft_\d+)/.test(str))
+			.filter(str => /^\s+at (?!ft_(?:\d|trace))/.test(str))
 			.map(str => '\n' + str)
 			.join('')
 	} else {
@@ -140,3 +144,10 @@ function createRuntimeError(err, location, isEmbeddedJS = false) {
 
 	return err;
 }
+
+module.exports = {
+	normalize,
+	createWriter,
+	Scope,
+	trace,
+};

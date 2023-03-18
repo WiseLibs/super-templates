@@ -1,6 +1,12 @@
 'use strict';
 const asm = require('../asm');
 
+/*
+	Merges adjacent PrintLiterals, significantly reducing the total number of
+	operations required to execute a template. This optimization is most
+	effective when used after the "bake" optimization.
+ */
+
 module.exports = (rootTemplate) => {
 	if (!(rootTemplate instanceof asm.TemplateFunc)) {
 		throw new TypeError('Expected rootTemplate to be a TemplateFunc object');

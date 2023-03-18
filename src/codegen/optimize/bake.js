@@ -1,6 +1,19 @@
 'use strict';
 const asm = require('../asm');
 
+/*
+	Attempts to "bake" DynamicBlocks, DynamicNewlines, and DynamicIndentations,
+	replacing them with static code. To do this, we simulate an execution of the
+	entire IR tree, keeping track of the template state throughout the
+	simulation. We represent "unknown" state values as undefined. If a state
+	value is not undefined, it means we've proved what that value will be at
+	that point in the template's execution. We use these proofs to eliminate
+	dynamic operations, replacing them with static ones.
+
+	This optimization will not produce valid results if used after the "merge"
+	optimization, or if used twice on the same IR.
+ */
+
 module.exports = (rootTemplate) => {
 	if (!(rootTemplate instanceof asm.TemplateFunc)) {
 		throw new TypeError('Expected rootTemplate to be a TemplateFunc object');

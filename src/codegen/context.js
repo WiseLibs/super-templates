@@ -3,8 +3,9 @@ const { Source, LineMap } = require('../source');
 const asm = require('./asm');
 
 /*
-	The context passed around to each code-generating function, used to generate
-	unique names for entities within the generated code.
+	The context passed around to each code-generating function. It is used to
+	generate unique names for entities within the generated code, and to
+	calculate source locations for runtime stack traces.
  */
 
 module.exports = class CodegenContext {

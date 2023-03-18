@@ -1,6 +1,11 @@
 'use strict';
 const { Source } = require('../source');
 
+/*
+	These nodes form the intermediate-representation (IR) of a functional
+	template, used during optimization and code generation.
+ */
+
 class ASM {}
 
 class DynamicBlock extends ASM {

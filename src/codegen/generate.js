@@ -7,6 +7,7 @@ const asm = require('./asm');
 
 /*
 	Generates the code for a given template AST.
+	TODO: reorganize this entire file
  */
 
 module.exports = (rootAST) => {
@@ -65,6 +66,7 @@ module.exports = (rootAST) => {
 			yield '\tif (blockHasContent) state.pendingNewline = "";';
 			yield '}';
 		} else if (node instanceof asm.DynamicIndentation) {
+			// TODO: this doesn't indent accurately for DynamicIncludes
 			yield '{';
 			yield '\tconst originalIndentation = state.indentation;';
 			yield '\tconst originalIndenter = state.indenter;';
@@ -166,6 +168,7 @@ module.exports = (rootAST) => {
 		const params = js.dependencyNames.length
 			? JSON.stringify(`{ vars: { ${js.dependencyNames.join(', ')} } }`) + ', '
 			: '';
+		// TODO: compile all JSFuncs together in one new Function, so they can share a "helper" scope
 		return (
 			`const ${ctx.name(js)} = trace(\n`
 				+ `\tnew Function(${params}\`return (\\n\${${body}}\\n);\`)\n`
