@@ -66,7 +66,7 @@ module.exports = (rootAST) => {
 			yield '\tif (blockHasContent) state.pendingNewline = "";';
 			yield '}';
 		} else if (node instanceof asm.DynamicIndentation) {
-			// TODO: this doesn't indent accurately for DynamicIncludes and sections
+			// TODO: this doesn't indent accurately for DynamicIncludes and DynamicSlots
 			yield '{';
 			yield '\tconst originalIndentation = state.indentation;';
 			yield '\tconst originalIndenter = state.indenter;';
@@ -146,8 +146,43 @@ module.exports = (rootAST) => {
 			yield '}';
 			jsFuncs.push(node.js);
 		} else if (node instanceof asm.EachBlock) {
-			// TODO
-			// throw new TypeError('EachBlock unimplemented');
+			yield '{';
+			yield '\tconst oldScope = scope;';
+			if (node.lineSeparator) {
+				yield '\tconst blockHasContent = state.blockHasContent;';
+				yield '\tstate.blockHasContent = false;';
+			}
+			if (node.indexName || node.falseBranch.length) {
+				yield '\tlet index = 0;';
+			}
+			yield `\tfor (const element of ${ctx.name(node.js)}(oldScope)) {`;
+			if (node.indexName) {
+				yield `\t\tconst scope = oldScope.withTwo("${node.name}", element, "${node.indexName}", index);`;
+			} else {
+				yield `\t\tconst scope = oldScope.with("${node.name}", element);`;
+			}
+			if (node.indexName || node.falseBranch.length) {
+				yield '\t\tindex += 1;';
+			}
+			if (node.lineSeparator) {
+				yield '\t\tconst blockHasContent = state.blockHasContent;';
+				yield `\t\tif (blockHasContent) state.pendingNewline = ${JSON.stringify(node.lineSeparator)};`;
+			}
+			yield* indent(indent(genAll(node.trueBranch)));
+			if (node.lineSeparator) {
+				yield '\t\tif (blockHasContent) state.pendingNewline = "";';
+			}
+			yield '\t}'
+			if (node.lineSeparator) {
+				yield '\tif (blockHasContent) state.blockHasContent = true;';
+			}
+			if (node.falseBranch.length) {
+				yield '\tif (index === 0) {';
+				yield* indent(indent(genAll(node.falseBranch)));
+				yield '\t}';
+			}
+			yield '}';
+			jsFuncs.push(node.js);
 		} else if (node instanceof asm.TransformBlock) {
 			yield '{';
 			yield '\tconst output = [];';

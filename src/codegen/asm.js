@@ -187,7 +187,7 @@ class EachBlock extends ASM {
 		if (indexName !== null && typeof indexName !== 'string') {
 			throw new TypeError('Expected indexName to be a string or null');
 		}
-		if (typeof lineSeparator !== 'string') {
+		if (lineSeparator !== undefined && typeof lineSeparator !== 'string') {
 			throw new TypeError('Expected lineSeparator to be a string');
 		}
 		this.js = js;
