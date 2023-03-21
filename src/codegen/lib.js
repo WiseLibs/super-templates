@@ -62,7 +62,7 @@ function createWriter(output, state) {
 				if (state.atNewline && !isNewlineChar(str[0])) {
 					output.push(state.indentation);
 				}
-				str = str.replace(INDENT_SPOTS, state.indenter);
+				str = str.replace(INDENT_SPOTS, '$&' + state.indentation);
 			}
 			state.atNewline = isNewlineChar(str[str.length - 1]);
 			state.blockHasContent = true;

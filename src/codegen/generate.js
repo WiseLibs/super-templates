@@ -7,10 +7,9 @@ const asm = require('./asm');
 
 /*
 	Generates the code for a given template AST.
-	TODO: reorganize this entire file
  */
 
-module.exports = (rootAST) => {
+module.exports = (rootAST, target) => {
 	if (!Array.isArray(rootAST)) {
 		throw new TypeError('Expected rootAST to be an array');
 	}
@@ -18,217 +17,28 @@ module.exports = (rootAST) => {
 	computeDependencies(rootAST);
 
 	const rootTemplate = optimize(assemble(rootAST));
-	const visited = new Set([rootTemplate]);
 	const ctx = new CodegenContext();
-	const code = ['"use strict";\n'];
+	const render = (node) => target.node.get(node.constructor)(node, ctx, renderAll);
+	const renderAll = (nodes) => nodes.map(render);
+	const code = ['"use strict";'];
+	const entryCode = target.root(rootTemplate, ctx);
 	const jsFuncs = [];
-	const queue = [rootTemplate];
 
-	while (queue.length) {
-		for (const str of gen(queue.shift())) {
-			code.push(str);
-			code.push('\n');
+	while (ctx.named.length) {
+		const templateFuncs = ctx.named.filter(x => x instanceof asm.TemplateFunc);
+		jsFuncs.push(...ctx.named.filter(x => x instanceof asm.JSFunc));
+		ctx.named = [];
+
+		for (const template of templateFuncs) {
+			code.push(render(template));
+			ctx.isRootTemplate = false;
 		}
 	}
 
-	while (jsFuncs.length) {
-		code.push(genJS(jsFuncs.shift()));
+	for (const js of jsFuncs) {
+		code.push(target.js(js, ctx));
 	}
 
-	code.push(genStart());
-	return code.join('');
-
-	function* indent(iterator) {
-		for (const str of iterator) {
-			yield `\t${str}`;
-		}
-	}
-
-	function* genAll(nodes) {
-		for (const node of nodes) {
-			yield* gen(node);
-		}
-	}
-
-	function* gen(node) {
-		if (node instanceof asm.DynamicBlock) {
-			yield '{';
-			yield '\tconst blockHasContent = state.blockHasContent;';
-			yield '\tstate.blockHasContent = false;';
-			yield* indent(genAll(node.children));
-			yield '\tif (blockHasContent) state.blockHasContent = true;';
-			yield '}';
-		} else if (node instanceof asm.DynamicNewline) {
-			yield '{';
-			yield '\tconst blockHasContent = state.blockHasContent;';
-			yield `\tif (blockHasContent) state.pendingNewline = ${JSON.stringify(node.newline)};`;
-			yield* indent(genAll(node.children));
-			yield '\tif (blockHasContent) state.pendingNewline = "";';
-			yield '}';
-		} else if (node instanceof asm.DynamicIndentation) {
-			// TODO: this doesn't indent accurately for DynamicIncludes and DynamicSlots
-			yield '{';
-			yield '\tconst originalIndentation = state.indentation;';
-			yield '\tconst originalIndenter = state.indenter;';
-			yield `\tstate.indentation = ${JSON.stringify(node.indentation)};`;
-			yield `\tstate.indenter = ${JSON.stringify('$&' + node.indentation)};`;
-			yield* indent(genAll(node.children));
-			yield '\tstate.indentation = originalIndentation;';
-			yield '\tstate.indenter = originalIndenter;';
-			yield '}';
-		} else if (node instanceof asm.PrintLiteral) {
-			yield `write(${JSON.stringify(node.content)});`;
-		} else if (node instanceof asm.PrintExpression) {
-			yield `write(normalize(${ctx.name(node.js)}(scope), ${JSON.stringify(ctx.location(node.js.source))}, ${node.isRaw ? 'true' : 'false'}));`;
-			jsFuncs.push(node.js);
-		} else if (node instanceof asm.Effect) {
-			yield `${ctx.name(node.js)}(scope);`;
-			jsFuncs.push(node.js);
-		} else if (node instanceof asm.DynamicSlot) {
-			yield `temp = ctx.sections.get("${node.name}");`
-			yield 'if (temp) temp(write, state);';
-		} else if (node instanceof asm.InlineSlot) {
-			yield '{';
-			yield '\tconst scope = ctx.scope;';
-			yield* indent(genAll(node.children));
-			yield '}';
-		} else if (node instanceof asm.DynamicInclude) {
-			yield '{';
-			yield '\tconst bindings = new Map();';
-			for (const [name, js] of node.bindings) {
-				yield `\tbindings.set("${name}", ${ctx.name(js)}(scope));`;
-				jsFuncs.push(js);
-			}
-			yield '\tconst sections = new Map();';
-			for (const [name, section] of node.sections) {
-				yield `\tsections.set("${name}", (write, state) => {`;
-				yield* indent(indent(genAll(section)));
-				yield '\t});';
-			}
-			yield `\t${ctx.name(node.ref)}(write, state, { bindings, sections });`;
-			yield '}';
-			if (!visited.has(node.ref)) {
-				visited.add(node.ref);
-				queue.push(node.ref);
-			}
-		} else if (node instanceof asm.InlineInclude) {
-			yield '{';
-			yield '\tconst bindings = new Map();';
-			for (const [name, js] of node.bindings) {
-				yield `\tbindings.set("${name}", ${ctx.name(js)}(scope));`;
-				jsFuncs.push(js);
-			}
-			yield '\ttemp = scope;'
-			yield '\t{'
-			yield '\t\tconst ctx = { bindings, scope: temp };';
-			yield '\t\tconst scope = new Scope();';
-			yield* indent(indent(genAll(node.children)));
-			yield '\t}'
-			yield '}';
-		} else if (node instanceof asm.LetBlock) {
-			yield 'temp = scope;';
-			yield '{';
-			if (node.js) {
-				yield `\tconst scope = temp.with("${node.name}", ${ctx.name(node.js)}(temp));`;
-				jsFuncs.push(node.js);
-			} else {
-				yield `\tconst scope = temp.with("${node.name}", ctx.bindings.get("${node.name}"));`;
-			}
-			yield* indent(genAll(node.children));
-			yield '}';
-		} else if (node instanceof asm.IfBlock) {
-			yield `if (${ctx.name(node.js)}(scope)) {`;
-			yield* indent(genAll(node.trueBranch));
-			if (node.falseBranch.length) {
-				yield '} else {';
-				yield* indent(genAll(node.falseBranch));
-			}
-			yield '}';
-			jsFuncs.push(node.js);
-		} else if (node instanceof asm.EachBlock) {
-			yield '{';
-			yield '\tconst oldScope = scope;';
-			if (node.lineSeparator) {
-				yield '\tconst blockHasContent = state.blockHasContent;';
-				yield '\tstate.blockHasContent = false;';
-			}
-			if (node.indexName || node.falseBranch.length) {
-				yield '\tlet index = 0;';
-			}
-			yield `\tfor (const element of ${ctx.name(node.js)}(oldScope)) {`;
-			if (node.indexName) {
-				yield `\t\tconst scope = oldScope.withTwo("${node.name}", element, "${node.indexName}", index);`;
-			} else {
-				yield `\t\tconst scope = oldScope.with("${node.name}", element);`;
-			}
-			if (node.indexName || node.falseBranch.length) {
-				yield '\t\tindex += 1;';
-			}
-			if (node.lineSeparator) {
-				yield '\t\tconst blockHasContent = state.blockHasContent;';
-				yield `\t\tif (blockHasContent) state.pendingNewline = ${JSON.stringify(node.lineSeparator)};`;
-			}
-			yield* indent(indent(genAll(node.trueBranch)));
-			if (node.lineSeparator) {
-				yield '\t\tif (blockHasContent) state.pendingNewline = "";';
-			}
-			yield '\t}'
-			if (node.lineSeparator) {
-				yield '\tif (blockHasContent) state.blockHasContent = true;';
-			}
-			if (node.falseBranch.length) {
-				yield '\tif (index === 0) {';
-				yield* indent(indent(genAll(node.falseBranch)));
-				yield '\t}';
-			}
-			yield '}';
-			jsFuncs.push(node.js);
-		} else if (node instanceof asm.TransformBlock) {
-			yield '{';
-			yield '\tconst output = [];';
-			yield '\t{'
-			yield '\t\tconst state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "", indenter: "$&" };';
-			yield '\t\tconst write = createWriter(output, state);';
-			yield* indent(indent(genAll(node.children)));
-			yield '\t}'
-			yield '\tconst newScope = scope.with("__block", output.join(""));'
-			yield `\twrite(normalize(${ctx.name(node.js)}(newScope), ${JSON.stringify(ctx.location(node.js.source))}, true));`;
-			yield '}';
-			jsFuncs.push(node.js);
-		} else if (node instanceof asm.TemplateFunc) {
-			yield `function ${ctx.name(node)}(write, state, ctx) {`;
-			yield '\tconst scope = new Scope();';
-			yield '\tlet temp;';
-			yield* indent(genAll(node.children));
-			yield '}';
-		} else {
-			throw new TypeError('Unrecognized ASM node');
-		}
-	}
-
-	function genJS(js) {
-		const location = JSON.stringify(ctx.location(js.source));
-		const body = JSON.stringify(js.source.string());
-		const params = js.dependencyNames.length
-			? JSON.stringify(`{ vars: { ${js.dependencyNames.join(', ')} } }`) + ', '
-			: '';
-		// TODO: compile all JSFuncs together in one new Function, so they can share a "helper" scope
-		return (
-			`const ${ctx.name(js)} = trace(\n`
-				+ `\tnew Function(${params}\`return (\\n\${${body}}\\n);\`)\n`
-			+ `, ${location});\n`
-		);
-	}
-
-	function genStart() {
-		return (
-			'return function template() {\n'
-				+ '\tconst output = [];\n'
-				+ '\tconst state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "", indenter: "$&" };\n'
-				+ '\tconst write = createWriter(output, state);\n'
-				+ `\t${ctx.name(rootTemplate)}(write, state, { bindings: null, sections: new Map() });\n`
-				+ '\treturn output.join("");\n'
-			+ '};\n'
-		);
-	}
+	code.push(entryCode);
+	return code.join('\n\n');
 };

@@ -5,7 +5,6 @@ const asm = require('./asm');
 /*
 	Generates the intermediate-representation (IR) of a functional template,
 	given its AST.
-	TODO: clean up this file a bit
  */
 
 module.exports = (rootAST) => {
@@ -51,7 +50,7 @@ module.exports = (rootAST) => {
 			if (node instanceof ast.ExpressionNode) {
 				const js = new asm.JSFunc(node.js.source, node.js.dependencyNames);
 				if (node.type === 'effect') {
-					return new asm.Effect(node.js);
+					return new asm.Effect(js);
 				} else {
 					const child = new asm.PrintExpression(js, node.type === 'inject');
 					if (!indentation) return child;
@@ -59,7 +58,7 @@ module.exports = (rootAST) => {
 				}
 			}
 			if (node instanceof ast.LetNode) {
-				const js = new asm.JSFunc(node.js.source, node.js.dependencyNames);
+				const js = node.js ? new asm.JSFunc(node.js.source, node.js.dependencyNames) : null;
 				const children = node.children.flatMap(convert);
 				return new asm.LetBlock(js, node.name, [new asm.DynamicBlock(children)]);
 			}

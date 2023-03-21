@@ -39,6 +39,7 @@ module.exports = (rootAST) => {
 					if (!scope.has('__block')) {
 						node.js.dependencyNames.push('__block');
 					}
+					walk(node.children);
 				} else {
 					walk(node.children);
 				}

@@ -13,6 +13,8 @@ module.exports = class CodegenContext {
 		this._lineMaps = new Map();
 		this._names = new Map();
 		this._nextId = 0;
+		this.named = [];
+		this.isRootTemplate = true;
 	}
 
 	name(obj) {
@@ -23,6 +25,7 @@ module.exports = class CodegenContext {
 		if (name === undefined) {
 			name = `ft_${this._nextId++}`;
 			this._names.set(obj, name);
+			this.named.push(obj);
 		}
 		return name;
 	}

@@ -11,11 +11,15 @@
   "license": "MIT",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --exit --slow=75 --timeout=5000"
   },
   "dependencies": {
     "acorn": "^8.8.2",
     "acorn-walk": "^8.2.0",
     "string-width": "^4.2.3"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0"
   }
 }
