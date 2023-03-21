@@ -1,11 +1,11 @@
 'use strict';
 const bake = require('./bake');
+const bubble = require('./bubble');
 const merge = require('./merge');
 
 module.exports = (rootTemplate) => {
 	bake(rootTemplate);
+	bubble(rootTemplate);
 	merge(rootTemplate);
-	// TODO: merge adjacent DynamicIndentations
-	// TODO: lower DynamicIndentations when all siblings are DynamicIndentations or Effects
 	return rootTemplate;
 };

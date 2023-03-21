@@ -10,6 +10,6 @@ exports.compile = async (filename, options = {}) => {
 	}
 };
 
-exports.create = (compiledTemplateCode) => {
-	return codegen.createFunction(compiledTemplateCode);
+exports.create = (compiledTemplate, helpers) => {
+	return codegen.createFunction(compiledTemplate, helpers);
 };

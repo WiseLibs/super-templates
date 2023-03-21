@@ -94,20 +94,23 @@ function isNewlineChar(char) {
 
 class Scope {
 	constructor() {
-		this.vars = Object.create(null);
+		this._vars = Object.create(null);
 	}
 	with(name, value) {
 		const scope = new Scope();
-		Object.assign(scope.vars, this.vars);
-		scope.vars[name] = value;
+		Object.assign(scope._vars, this._vars);
+		scope._vars[name] = value;
 		return scope;
 	}
 	withTwo(name1, value1, name2, value2) {
 		const scope = new Scope();
-		Object.assign(scope.vars, this.vars);
-		scope.vars[name1] = value1;
-		scope.vars[name2] = value2;
+		Object.assign(scope._vars, this._vars);
+		scope._vars[name1] = value1;
+		scope._vars[name2] = value2;
 		return scope;
+	}
+	use() {
+		return this._vars;
 	}
 }
 

@@ -48,10 +48,10 @@ exports.node = new Map([
 	[asm.PrintExpression, (node, ctx) => {
 		const location = JSON.stringify(ctx.location(node.js.source));
 		const isRaw = node.isRaw ? 'true' : 'false';
-		return `write(normalize(${ctx.name(node.js)}(scope), ${location}, ${isRaw}));`;
+		return `write(normalize(${ctx.name(node.js)}(scope.use()), ${location}, ${isRaw}));`;
 	}],
 	[asm.Effect, (node, ctx) => {
-		return `${ctx.name(node.js)}(scope);`;
+		return `${ctx.name(node.js)}(scope.use());`;
 	}],
 	[asm.DynamicSlot, (node, ctx) => {
 		return block([
@@ -69,7 +69,7 @@ exports.node = new Map([
 		return block([
 			'const bindings = new Map();',
 			...[...node.bindings].map(([name, js]) => (
-				`bindings.set("${name}", ${ctx.name(js)}(scope));`
+				`bindings.set("${name}", ${ctx.name(js)}(scope.use()));`
 			)),
 			'const sections = new Map();',
 			...[...node.sections].map(([name, section]) => (
@@ -83,7 +83,7 @@ exports.node = new Map([
 		return block([
 			'const bindings = new Map();',
 			...[...node.bindings].map(([name, js]) => (
-				`bindings.set("${name}", ${ctx.name(js)}(scope));`
+				`bindings.set("${name}", ${ctx.name(js)}(scope.use()));`
 			)),
 			'const ctx = { bindings, scope };',
 			block([
@@ -94,7 +94,7 @@ exports.node = new Map([
 	}],
 	[asm.LetBlock, (node, ctx, render) => {
 		const value = node.js
-			? `${ctx.name(node.js)}(oldScope)`
+			? `${ctx.name(node.js)}(oldScope.use())`
 			: `ctx.bindings.get("${node.name}")`;
 
 		return block([
@@ -106,7 +106,7 @@ exports.node = new Map([
 		]);
 	}],
 	[asm.IfBlock, (node, ctx, render) => {
-		let code = `if (${ctx.name(node.js)}(scope)) ${block(render(node.trueBranch))}`;
+		let code = `if (${ctx.name(node.js)}(scope.use())) ${block(render(node.trueBranch))}`;
 
 		if (node.falseBranch.length) {
 			code += ` else ${block(render(node.falseBranch))}`;
@@ -123,7 +123,7 @@ exports.node = new Map([
 				...ifThen(node.indexName || node.falseBranch.length, [
 					'let index = 0;',
 				]),
-				`for (const element of ${ctx.name(node.js)}(oldScope)) ` + block([
+				`for (const element of ${ctx.name(node.js)}(oldScope.use())) ` + block([
 					...ifThen(node.indexName, [
 						`const scope = oldScope.withTwo("${node.name}", element, "${node.indexName}", index);`,
 					], [
@@ -148,7 +148,7 @@ exports.node = new Map([
 				...ifThen(node.indexName || node.falseBranch.length, [
 					'let index = 0;',
 				]),
-				`for (const element of ${ctx.name(node.js)}(oldScope)) ` + block([
+				`for (const element of ${ctx.name(node.js)}(oldScope.use())) ` + block([
 					...ifThen(node.indexName, [
 						`const scope = oldScope.withTwo("${node.name}", element, "${node.indexName}", index);`,
 					], [
@@ -175,23 +175,28 @@ exports.node = new Map([
 				...render(node.children),
 			]),
 			'const newScope = scope.with("__block", output.join(""));',
-			`write(normalize(${ctx.name(node.js)}(newScope), ${location}, true));`,
+			`write(normalize(${ctx.name(node.js)}(newScope.use()), ${location}, true));`,
 		]);
 	}],
 ]);
 
-// TODO: compile all JSFuncs together in one new Function, so they can share a "helper" scope
-exports.js = (js, ctx) => {
-	const location = JSON.stringify(ctx.location(js.source));
-	const body = JSON.stringify(js.source.string());
-	const params = js.dependencyNames.length
-		? JSON.stringify(`{ vars: { ${js.dependencyNames.join(', ')} } }`) + ', '
-		: '';
+exports.js = (jsFuncs, ctx) => {
 	return (
-		`const ${ctx.name(js)} = trace(\n\t`
-			+ `new Function(${params}\`return (\\n\${${body}}\\n);\`)\n`
-		+ `, ${location});`
-	);
+		'const [\n'
+			+ jsFuncs.map(js => `\t${ctx.name(js)},\n`).join('')
+		+ '] = new Function(\n'
+			+ '\t"\\"use strict\\";\\n"\n'
+			+ '\t+ `const { ${Object.keys(helpers).join(", ")} } = arguments[0];\\n`\n'
+			+ '\t+ "return [\\n"\n'
+			+ jsFuncs.map((js) => {
+				const location = JSON.stringify(JSON.stringify(ctx.location(js.source)));
+				const params = js.dependencyNames.length ? `{ ${js.dependencyNames.join(', ')} }` : '';
+				const body = JSON.stringify(js.source.string());
+				return `\t\t+ \`\\t{ loc: \${${location}}, exec(${params}) { return (\\n\${${body}}\\n\\t); } },\\n\`\n`
+			}).join('')
+			+ '\t+ "];"\n'
+		+ ')(helpers).map(({ exec, loc }) => trace(exec, loc));'
+	)
 };
 
 exports.root = (rootTemplate, ctx) => {
@@ -202,7 +207,7 @@ exports.root = (rootTemplate, ctx) => {
 			'const write = createWriter(output, state);',
 			`${ctx.name(rootTemplate)}(write, state, { bindings: null, sections: new Map() });`,
 			'return output.join("");',
-		])
+		]) + ';'
 	);
 };
 

@@ -10,8 +10,8 @@ const asm = require('../asm');
 	that point in the template's execution. We use these proofs to eliminate
 	dynamic operations, replacing them with static ones.
 
-	This optimization will not produce valid results if used after the "merge"
-	optimization, or if used twice on the same IR.
+	This optimization will not produce valid results if used after any other
+	optimizations, or if used twice on the same IR.
  */
 
 module.exports = (rootTemplate) => {

@@ -35,8 +35,8 @@ module.exports = (rootAST, target) => {
 		}
 	}
 
-	for (const js of jsFuncs) {
-		code.push(target.js(js, ctx));
+	if (jsFuncs.length) {
+		code.push(target.js(jsFuncs, ctx));
 	}
 
 	code.push(entryCode);

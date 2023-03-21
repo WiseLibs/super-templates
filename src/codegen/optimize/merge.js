@@ -2,9 +2,10 @@
 const asm = require('../asm');
 
 /*
-	Merges adjacent PrintLiterals, significantly reducing the total number of
-	operations required to execute a template. This optimization is most
-	effective when used after the "bake" optimization.
+	Merges adjacent PrintLiterals and merges adjacent DynamicIndentations,
+	significantly reducing the total number of operations required to execute a
+	template. This optimization is most effective when used after the "bake"
+	and "bubble" optimizations.
  */
 
 module.exports = (rootTemplate) => {
@@ -16,18 +17,27 @@ module.exports = (rootTemplate) => {
 	merge(rootTemplate.children);
 
 	function merge(nodes) {
-		let literal;
+		let prevNode;
 		for (let i = 0; i < nodes.length; ++i) {
 			const node = nodes[i];
 			if (node instanceof asm.PrintLiteral) {
-				if (literal) {
-					literal.content += node.content;
+				if (prevNode instanceof asm.PrintLiteral) {
+					prevNode.content += node.content;
 					nodes.splice(i--, 1);
 				} else {
-					literal = node;
+					prevNode = node;
+				}
+			} else if (node instanceof asm.DynamicIndentation) {
+				if (prevNode instanceof asm.DynamicIndentation
+					&& prevNode.indentation === node.indentation
+				) {
+					prevNode.children.push(...node.children);
+					nodes.splice(i--, 1);
+				} else {
+					prevNode = node;
 				}
 			} else {
-				literal = undefined;
+				prevNode = undefined;
 			}
 		}
 
