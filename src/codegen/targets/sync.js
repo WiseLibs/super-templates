@@ -31,13 +31,9 @@ exports.node = new Map([
 		]);
 	}],
 	[asm.DynamicIndentation, (node, ctx, render) => {
-		const indentation = ctx.isRootTemplate
-			? JSON.stringify(node.indentation)
-			: `ctx.indentation + ${JSON.stringify(node.indentation)}`;
-
 		return block([
 			'const indentation = state.indentation;',
-			`state.indentation = ${indentation};`,
+			`state.indentation += ${JSON.stringify(node.indentation)};`,
 			...render(node.children),
 			'state.indentation = indentation;',
 		]);
@@ -75,8 +71,7 @@ exports.node = new Map([
 			...[...node.sections].map(([name, section]) => (
 				`sections.set("${name}", (write, state) => ${block(render(section))});`
 			)),
-			'const indentation = state.indentation;',
-			`${ctx.name(node.ref)}(write, state, { bindings, sections, indentation });`,
+			`${ctx.name(node.ref)}(write, state, { bindings, sections });`,
 		]);
 	}],
 	[asm.InlineInclude, (node, ctx, render) => {

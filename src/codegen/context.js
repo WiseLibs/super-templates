@@ -14,7 +14,6 @@ module.exports = class CodegenContext {
 		this._names = new Map();
 		this._nextId = 0;
 		this.named = [];
-		this.isRootTemplate = true;
 	}
 
 	name(obj) {

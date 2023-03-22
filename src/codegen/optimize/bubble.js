@@ -55,7 +55,7 @@ module.exports = (rootTemplate) => {
 				const commonIndentation = getCommonIndentation(node.children);
 				if (commonIndentation !== null) {
 					node.children = withoutIndentations(node.children);
-					node.indentation = commonIndentation;
+					node.indentation += commonIndentation;
 				}
 			} else if (node.children) {
 				bubble(node.children);

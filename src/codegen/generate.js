@@ -31,7 +31,6 @@ module.exports = (rootAST, target) => {
 
 		for (const template of templateFuncs) {
 			code.push(render(template));
-			ctx.isRootTemplate = false;
 		}
 	}
 
