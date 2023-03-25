@@ -166,7 +166,7 @@ exports.node = new Map([
 			'const output = [];',
 			block([
 				'const state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "" };',
-				'const write = createWriter(output, state);',
+				'const write = createWriter(output.push.bind(output), state);',
 				...render(node.children),
 			]),
 			'const newScope = scope.with("__block", output.join(""));',
@@ -191,7 +191,7 @@ exports.js = (jsFuncs, ctx) => {
 			}).join('')
 			+ '\t+ "];"\n'
 		+ ')(helpers).map(({ exec, loc }) => trace(exec, loc));'
-	)
+	);
 };
 
 exports.root = (rootTemplate, ctx) => {
@@ -199,7 +199,7 @@ exports.root = (rootTemplate, ctx) => {
 		'return function template() ' + block([
 			'const output = [];',
 			'const state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "" };',
-			'const write = createWriter(output, state);',
+			'const write = createWriter(output.push.bind(output), state);',
 			`${ctx.name(rootTemplate)}(write, state, { bindings: null, sections: new Map() });`,
 			'return output.join("");',
 		]) + ';'

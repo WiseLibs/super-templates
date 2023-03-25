@@ -119,13 +119,18 @@ function elseMarker(tzr, start) {
 function eachBlock(tzr, start) {
 	tzr.acceptRe(WHITESPACE);
 	tzr.expectRe(IDENTIFIER);
-	const name = tzr.getCaptured().string();
+	const nameSource = tzr.getCaptured();
+	const name = nameSource.string();
 	let indexName = null;
 	tzr.acceptRe(WHITESPACE);
 	if (tzr.acceptStr(',')) {
 		tzr.acceptRe(WHITESPACE);
 		tzr.expectRe(IDENTIFIER);
-		indexName = tzr.getCaptured().string();
+		const indexNameSource = tzr.getCaptured();
+		indexName = indexNameSource.string();
+		if (name === indexName) {
+			nameSource.to(indexNameSource).error('Duplicate identifiers').throw();
+		}
 		tzr.acceptRe(WHITESPACE);
 	}
 	tzr.expectStr(':');

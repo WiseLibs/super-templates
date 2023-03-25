@@ -119,7 +119,9 @@ module.exports = (rootAST) => {
 				if (inlineSections) {
 					const section = inlineSections.find(x => x.name === node.name);
 					if (!section) return [];
+					inlineStack.pop();
 					const children = section.children.flatMap(convert);
+					inlineStack.push(inlineSections);
 					return new asm.InlineSlot(node.name, [new asm.DynamicBlock(children)]);
 				} else {
 					const child = new asm.DynamicSlot(node.name);

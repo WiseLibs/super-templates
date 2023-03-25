@@ -11,7 +11,7 @@
   "license": "MIT",
   "main": "src/index.js",
   "scripts": {
-    "test": "mocha --exit --slow=75 --timeout=5000"
+    "test": "mocha --exit --slow=100 --timeout=5000"
   },
   "dependencies": {
     "acorn": "^8.8.2",

@@ -6,7 +6,7 @@ exports.compile = async (filename, options = {}) => {
 	if (options.syncOnly) {
 		return codegen.sync(await importer.import(filename, options));
 	} else {
-		throw new TypeError('Async templates not yet implemented');
+		return codegen.async(await importer.import(filename, options));
 	}
 };
 

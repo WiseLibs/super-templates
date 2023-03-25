@@ -1,4 +1,5 @@
 'use strict';
+const { Readable } = require('stream');
 
 /*
 	This function checks that the given value is something that can be inserted
@@ -43,8 +44,8 @@ function escapeHTML(str) {
 
 /*
 	Creates a "write()" function, which drives the given template state, handles
-	dynamic indentation and dynamic newlines, and pushes the resulting strings
-	into the given output array.
+	dynamic indentation and dynamic newlines, and passes the resulting strings
+	to the given output callback.
  */
 
 const NOT_NEWLINE = /[^\x0a\x0d\u2028\u2029]/u;
@@ -54,13 +55,13 @@ function createWriter(output, state) {
 		if (!str) return;
 		if (NOT_NEWLINE.test(str)) {
 			if (state.pendingNewline) {
-				output.push(state.pendingNewline);
+				output(state.pendingNewline);
 				state.pendingNewline = '';
 				state.atNewline = true;
 			}
 			if (state.indentation) {
 				if (state.atNewline && !isNewlineChar(str[0])) {
-					output.push(state.indentation);
+					output(state.indentation);
 				}
 				str = str.replace(INDENT_SPOTS, '$&' + state.indentation);
 			}
@@ -69,7 +70,7 @@ function createWriter(output, state) {
 		} else {
 			state.atNewline = true;
 		}
-		output.push(str);
+		output(str);
 	};
 }
 
@@ -88,8 +89,119 @@ function isNewlineChar(char) {
 }
 
 /*
-	Scope is used to manage/organize a compiled template's variable context.
-	TODO: make this compatible with async codegen
+	Creates an async iterable iterator from the given initializer function.
+	The initializer function is called immediately, with an "output()" function
+	passed as its only parameter, which is used to populate the async iterator.
+	The initializer function may return a promise, indicating when no more
+	output will be generated. Unlike an async generator, this async iterator
+	generates output eagerly, buffering output until it is consumed.
+ */
+
+function createAsyncIterable(initializer) {
+	const requests = [];
+	let buffer = []; // TODO: this could be optimized by using a real queue data structure
+	let isEnded = false;
+	let isDone = false;
+	let isError = false;
+	let error;
+
+	const onWrite = (value) => {
+		if (!isEnded) {
+			if (requests.length) {
+				requests.shift()({ value, done: false });
+			} else {
+				buffer.push(value);
+			}
+		}
+	};
+	const onFinish = () => {
+		if (!buffer.length) {
+			isDone = true;
+			while (requests.length) {
+				requests.shift()({ value: undefined, done: true });
+			}
+		}
+	};
+	const onCancel = (err) => {
+		if (!isDone) {
+			buffer = [];
+			isEnded = true;
+			isDone = true;
+			isError = true;
+			error = err;
+			while (requests.length) {
+				requests.shift()(Promise.reject(err));
+			}
+		}
+	};
+
+	new Promise(r => r(initializer(onWrite))).then(() => {
+		if (!isDone) {
+			isEnded = true;
+			onFinish();
+		}
+	}, onCancel);
+
+	return {
+		next: () => new Promise((resolve, reject) => {
+			if (!isDone) {
+				if (buffer.length) {
+					resolve({ value: buffer.shift(), done: false });
+					isEnded && onFinish();
+				} else {
+					requests.push(resolve);
+				}
+			} else if (!isError) {
+				resolve({ value: undefined, done: true });
+			} else {
+				reject(error);
+			}
+		}),
+		return: (value) => {
+			onCancel(new Error('Operation cancelled'));
+			return Promise.resolve({ value, done: true });
+		},
+		throw: (err) => {
+			onCancel(err);
+			return Promise.reject(err);
+		},
+		[Symbol.asyncIterator]() {
+			return this;
+		},
+	};
+}
+
+/*
+	Creates a storage container designed for storing promises. Promises that are
+	stored will not trigger unhandledRejection errors. When a promise is
+	retrieved from storage ("consumed"), it will also be deleted from storage.
+	The "clear()" method consumes all stored promises, and returns the
+	"Promise.all()" of all such promises.
+ */
+
+function createAsyncStorage() {
+	const storage = new Map();
+	return {
+		store: (name, promise) => {
+			promise.catch(() => {}); // Prevent unhandledRejection
+			storage.set(name, promise);
+		},
+		consume: (name) => {
+			const promise = storage.get(name);
+			storage.delete(name);
+			return promise;
+		},
+		clear: () => {
+			if (!storage.size) return Promise.resolve();
+			const promise = Promise.all([...storage.values()]);
+			storage.clear();
+			return promise;
+		},
+	};
+}
+
+/*
+	Scope is used to store/manage a compiled template's variable context.
  */
 
 class Scope {
@@ -97,13 +209,13 @@ class Scope {
 		this._vars = Object.create(null);
 	}
 	with(name, value) {
-		const scope = new Scope();
+		const scope = new (this.constructor)();
 		Object.assign(scope._vars, this._vars);
 		scope._vars[name] = value;
 		return scope;
 	}
 	withTwo(name1, value1, name2, value2) {
-		const scope = new Scope();
+		const scope = new (this.constructor)();
 		Object.assign(scope._vars, this._vars);
 		scope._vars[name1] = value1;
 		scope._vars[name2] = value2;
@@ -112,6 +224,39 @@ class Scope {
 	use() {
 		return this._vars;
 	}
+}
+
+/*
+	AsyncScope is the same as Scope, except that its stores getter functions,
+	instead of storing the variable values themselves. Its "use()" method is
+	asynchronous (allowing getter functions to be asynchronous), and it only
+	returns the variables that are requested in the arguments.
+ */
+
+class AsyncScope extends Scope {
+	async use(...names) {
+		const values = await Promise.all(names.map(name => this._vars[name]()));
+		const vars = Object.create(null);
+		for (let i = 0; i < names.length; ++i) {
+			vars[names[i]] = values[i];
+		}
+		return vars;
+	}
+}
+
+/*
+	Wraps the given getter function such that it will only be called once, and
+	all invocations after the first will just return the first returned value.
+ */
+
+function memo(getter) {
+	let cache;
+	return () => {
+		if (cache === undefined) {
+			cache = getter();
+		}
+		return cache;
+	};
 }
 
 /*
@@ -124,6 +269,16 @@ function trace(fn, location) {
 	return function ft_trace(arg) {
 		try {
 			return fn(arg);
+		} catch (err) {
+			throw createRuntimeError(err, location, true);
+		}
+	};
+}
+
+function traceAsync(fn, location) {
+	return async function ft_trace(arg) {
+		try {
+			return await fn(arg);
 		} catch (err) {
 			throw createRuntimeError(err, location, true);
 		}
@@ -151,6 +306,11 @@ function createRuntimeError(err, location, isEmbeddedJS = false) {
 module.exports = {
 	normalize,
 	createWriter,
+	createAsyncIterable,
+	createAsyncStorage,
 	Scope,
+	AsyncScope,
+	memo,
 	trace,
+	traceAsync,
 };
