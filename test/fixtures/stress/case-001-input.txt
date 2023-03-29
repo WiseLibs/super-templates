@@ -1,0 +1,35 @@
+{{! stress test: complex template }}
+
+{{let pageTitle: 'The coolest' + ' "page"'}}
+{{let thing: { value: 123 }}}
+
+{{include './case-001-partial1.txt' with title: pageTitle}}
+
+{{section head}}
+	{{! this is a pretty useful section! }}
+	<script>console.log('Welcome to the console!');</script>
+{{end}}
+
+<main>
+	<h1>
+		{{pageTitle}}
+	</h1>
+	<p>
+		{{effect thing.value++}}
+		{{thing.value}}
+		{{UNSAFE_INJECT '<b>this is important!</b>'}}
+	</p>
+	{{> './case-001-partial2.txt'}}
+	{{include './case-001-partial4.txt'}}
+		<div>
+			<h2>Here is a tree:</h2>
+			{{> './case-001-partial7.txt'
+				with tree: [[[1], [2, 3]], 4, [[[[5]]]]]
+			}}
+		</div>
+	{{end}}
+	{{> './case-001-partial8.txt'}}
+	{{include './case-001-partial9.txt'}}
+		<div>hello {{thing.value++}}</div>
+	{{end}}
+</main>

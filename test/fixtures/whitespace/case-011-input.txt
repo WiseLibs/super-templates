@@ -1,0 +1,42 @@
+{{! "else" clause whitespace }}
+{{if false}}
+	nope
+{{else}}
+	ok
+{{end}}
+foo{{if false}}
+	nope
+{{else}}
+	ok
+{{end}}bar
+foo{{if false}}
+	nope
+				{{else}}ok
+	yup
+{{end}}bar
+{{if false}}
+nope
+{{else}}ok
+	yup
+{{end}}foo
+
+{{each value: []}}
+	nope
+{{else}}
+	ok
+{{end}}
+foo{{each value: []}}
+	nope
+{{else}}
+	ok
+{{end}}bar
+foo{{each value: []}}
+	nope
+				{{else}}ok
+	yup
+{{end}}bar
+{{each value: []}}
+nope
+{{else}}ok
+	yup
+{{end}}foo

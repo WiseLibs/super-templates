@@ -1,0 +1,18 @@
+{{!
+	This is an example of a nested comment
+	{{!--
+		{{!--
+			}}
+		--}}
+	--}}
+	{{!
+		Hello!
+	}}
+	All good here!
+}}
+
+<div class="outer-outer-wrapper">
+	{{transform __block.slice(3, -3)}}
+		foo{{slot}}bar
+	{{end}}
+</div>

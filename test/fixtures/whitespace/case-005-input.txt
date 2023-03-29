@@ -1,0 +1,17 @@
+{{! collapse blocks }}
+{{if true}}foo{{end}}
+{{if true}}
+foo{{end}}
+{{if true}}foo
+{{end}}
+{{if true}}
+foo
+{{end}}
+{{if true}}hi
+foo{{end}}
+{{if true}}foo
+hi{{end}}
+{{if true}}{{! dont care about comments}}
+foo
+hi
+{{! dont care about comments}}{{end}}

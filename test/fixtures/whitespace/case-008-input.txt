@@ -1,0 +1,45 @@
+{{! indentation }}
+{{if true}}
+	foo
+		bar
+{{end}}
+{{if true}}
+		foo
+	bar
+{{end}}
+{{if true}}foo
+		bar
+	baz
+{{end}}
+{{if true}}foo
+	bar
+baz{{end}}
+{{if true}}foo
+	bar
+	baz{{end}}
+{{if true}}foo
+bar
+	baz{{end}}
+	{{if true}}foo
+	bar
+		baz{{end}}
+
+{{let x: 123}}
+	{{if true}}
+		foo
+			bar
+	{{end}}
+	baz
+{{end}}
+
+{{let x: 123}}
+{{! this comment sets the block's indentation level }}
+	{{if true}}
+		foo
+			bar
+			{{if true}}
+				baz
+			{{end}}
+	{{end}}
+	qux
+{{end}}

@@ -1,0 +1,4 @@
+{{! recursive template whitespace }}
+start
+{{> './case-015-partial.txt' with x: 5}}
+end

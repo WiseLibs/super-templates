@@ -1,0 +1,15 @@
+{{let tree}}
+{{let tree}}
+{{let tree}}
+
+<ul>
+	{{each child: tree}}
+		<li>
+			{{if Array.isArray(child)}}
+				{{> './case-001-partial7.txt' with tree: child }}
+			{{else}}
+				{{child}}
+			{{end}}
+		</li>
+	{{end}}
+</ul>

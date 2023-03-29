@@ -1,0 +1,7 @@
+{{include './case-001-partial6.txt'}}
+
+<div class="outer-wrapper">
+	{{slot}}
+</div>
+
+{{end}}

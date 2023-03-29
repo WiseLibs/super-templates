@@ -1,14 +1,15 @@
 'use strict';
+const fs = require('fs/promises');
+const loadCases = require('./fixtures/load-cases');
 const FT = require('../.');
 
-async function createTemplate(content, options = { syncOnly: true }) {
-	const filename = await createTempFile(content);
+async function createTemplate(filename, options = { syncOnly: true }) {
 	const compiledTemplate = await FT.compile(filename, options);
 	return FT.create(compiledTemplate);
 }
 
-async function createAsyncTemplate(content) {
-	const template = await createTemplate(content, { syncOnly: false });
+async function createAsyncTemplate(filename) {
+	const template = await createTemplate(filename, { syncOnly: false });
 	return async () => {
 		const output = [];
 		for await (const str of template()) output.push(str);
@@ -17,26 +18,22 @@ async function createAsyncTemplate(content) {
 }
 
 describe('whitespace behavior', function () {
+	const testCases = loadCases('whitespace');
+
 	describe('sync templates', function () {
-		// TODO: indentation (also in included templates, sections, and recursive templates)
-		// TODO: dynamic newlines
-		// TODO: literal newlines
-		// TODO: "each" block line separators
-		// TODO: strip comment lines
-		// TODO: collapse blocks
-		// TODO: "transform" block isolated state
-		// TODO: "include" block default section with nested named sections
-		// TODO: trimmed whitespace within template preamble
+		for (const testCase of testCases) {
+			it(`satisfies case #${testCase.caseNumber}`, async function () {
+				const template = await createTemplate(testCase.input);
+				expect(template()).to.equal(await fs.readFile(testCase.output, 'utf8'));
+			});
+		}
 	});
 	describe('async templates', function () {
-		// TODO: indentation (also in included templates, sections, and recursive templates)
-		// TODO: dynamic newlines
-		// TODO: literal newlines
-		// TODO: "each" block line separators
-		// TODO: strip comment lines
-		// TODO: collapse blocks
-		// TODO: "transform" block isolated state
-		// TODO: "include" block default section with nested named sections
-		// TODO: trimmed whitespace within template preamble
+		for (const testCase of testCases) {
+			it(`satisfies case #${testCase.caseNumber}`, async function () {
+				const template = await createAsyncTemplate(testCase.input);
+				expect(await template()).to.equal(await fs.readFile(testCase.output, 'utf8'));
+			});
+		}
 	});
 });

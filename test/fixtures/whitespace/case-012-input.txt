@@ -1,0 +1,20 @@
+{{! "transform" block whitespace }}
+{{transform __block}}
+	foo
+	bar
+{{end}}
+foo{{transform __block}}
+		bar
+	baz
+{{end}}qux
+{{if true}}
+	hello
+		({{transform __block.replace(/\n/g, 'X').replace(/\t/g, 'Y')}}
+			{{if true}}
+				foo
+			{{end}}
+				bar
+			baz
+		{{end}})
+	goodbye
+{{end}}

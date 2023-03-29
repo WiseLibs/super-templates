@@ -1,0 +1,11 @@
+
+{{let lol: 'lol'}}
+
+hello
+	{{lol}}{{slot}}
+{{if true}}
+	{{slot mySection}}
+{{end}}
+{{! ignore this line }}
+goodbye
+

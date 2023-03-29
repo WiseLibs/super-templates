@@ -1,0 +1,17 @@
+{{! "each" block whitespace }}
+foo{{each value: [1, 2, 3, 4]}}{{value}}{{end}}bar
+foo{{each value: [1, 2, 3, 4]}}
+	{{value}}
+{{end}}bar
+foo{{each value: [1, 2, 3, 4]}}
+	{{2 < 3 ? '' : 'hello'}}
+	{{value}}
+	{{2 < 3 ? '' : 'hello'}}
+{{end}}bar
+foo{{each value: [1, 2, 3, 4]}}{{! ignore comments }}
+		hello
+	{{value}}
+		goodbye{{! ignore comments }}
+		{{! ignored comment lines }}
+			{{! ignored comment lines }}
+{{end}}bar

@@ -1,0 +1,9 @@
+{{let x}}
+
+{{if x > 0}}
+	{{x}}:
+		->{{> './case-015-partial.txt' with x: x - 1}}.
+{{else}}
+
+	done!
+{{end}}

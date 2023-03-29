@@ -125,6 +125,7 @@ module.exports = (rootTemplate) => {
 			} else if (node instanceof asm.EachBlock) {
 				const stateA = { ...state };
 				const stateB = { ...state };
+				writeUnknown(stateA); // We don't know how many iterations there are
 				node.trueBranch = node.trueBranch.flatMap(withState(stateA));
 				node.falseBranch = node.falseBranch.flatMap(withState(stateB));
 				mergePossibilities(stateA, stateB, state);

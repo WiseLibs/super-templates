@@ -1,0 +1,11 @@
+
+{{let lol: 'lol'}}
+
+{{> './case-014-recursive.txt'}}
+	{{lol}}{{slot}}
+{{if true}}
+	{{slot mySection}}
+{{end}}
+{{! ignore this line }}
+goodbye
+

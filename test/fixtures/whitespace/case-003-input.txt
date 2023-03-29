@@ -1,0 +1,61 @@
+{{! keep literal lines }}
+start
+
+end
+start
+{{if true}}
+{{end}}
+end
+start
+{{if true}}
+
+{{end}}
+end
+start
+{{if true}}
+
+
+{{end}}
+end
+start
+{{if true}}
+
+
+
+{{end}}
+end
+start
+{{if true}}foo
+{{end}}
+end
+start
+{{if true}}
+foo
+{{end}}
+end
+start
+{{if true}}
+
+foo
+{{end}}
+end
+start
+{{if true}}
+
+
+foo
+{{end}}
+end
+start
+{{if true}}
+foo
+
+{{end}}
+end
+start
+{{if true}}
+foo
+
+
+{{end}}
+end

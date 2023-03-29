@@ -1,0 +1,20 @@
+{{let thing: { value: 10 }}}
+
+{{if true}}
+	{{if true}}
+		{{if 2 > 3}}
+			this won't happen
+			{{effect thing.value++}}
+		{{end}}
+		{{if 3 > 4}}
+			this won't happen either
+		{{else}}
+			{{thing.value}}
+		{{end}}
+	{{end}}{{if 3 > 2}}
+		{{thing.value + 1}}
+	{{end}}
+	{{global.Number.constructor.name}}
+	{{typeof setTimeout}}
+
+{{end}}

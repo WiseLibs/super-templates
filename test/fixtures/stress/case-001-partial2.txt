@@ -1,0 +1,9 @@
+<ul class="list">
+	{{each value, index: [1n, 2n, 3n, 4n, 5n]}}
+		{{> './case-001-partial3.txt'
+			with index: index
+			with value: value
+			with multiplier: 2n
+		}}
+	{{end}}
+</ul>

@@ -1,0 +1,17 @@
+{{! included template whitespace }}
+
+
+{{if true}}
+	foo
+		{{include './case-013-partial.txt'}}
+			bar
+				{{section mySection}}
+					{{! ignore this line }}
+					this is a section
+					and a new line
+				{{end}}
+
+			baz
+		{{end}}suffix
+{{end}}
+

@@ -1,0 +1,12 @@
+{{let title}}
+
+<html>
+	<head>
+		{{slot head}}
+		<title>{{title}}!</title>
+	</head>
+	<body>
+		{{!-- this HTML boilerplate wraps around the slot below --}}
+		{{slot}}
+	</body>
+</html>

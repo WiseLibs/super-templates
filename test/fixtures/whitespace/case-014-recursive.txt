@@ -1,0 +1,4 @@
+hello
+{{if 2 > 3}}
+	{{> './case-014-partial.txt'}}
+{{end}}

@@ -1,0 +1,8 @@
+{{let value}}
+{{let multiplier}}
+
+<li class="list-item">
+	{{let index}}
+		The [{{index}}] value is: {{value * multiplier}}
+	{{end}}
+</li>

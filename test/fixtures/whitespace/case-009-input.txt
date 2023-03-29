@@ -1,0 +1,44 @@
+{{! block joining }}
+foo{{if true}}
+	bar
+{{end}}
+{{if true}}
+	foo
+{{end}}bar
+foo{{if true}}
+	bar
+{{end}}baz
+foo{{if true}}
+	bar
+{{end}}baz{{if true}}
+	qux
+{{end}}
+foo{{if true}}bar
+	baz
+{{end}}qux
+foo{{if true}}
+	bar
+baz{{end}}qux
+foo{{if true}}
+	{{2 < 3 ? '' : 'hello'}}
+	{{if true}}
+		{{if true}}
+			{{if false}}
+				hello
+			{{end}}
+			{{2 < 3 ? 'bar' : 'hello'}}
+				baz
+		{{end}}
+	{{end}}qux
+{{end}}yay
+start{{if true}}
+	{{1 ? '' : 'hello'}}
+		foo
+	bar
+{{end}}end
+start{{if true}}
+	{{1 ? '' : 'hello'}}
+
+		foo
+	bar
+{{end}}end

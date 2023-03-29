@@ -1,0 +1,8 @@
+foo
+	hello
+		lolbar
+
+		baz
+	this is a section
+	and a new line
+	goodbyesuffix

@@ -1,0 +1,10 @@
+{{! dynamic newlines }}
+foo
+{{ false ? 'hi' : '' }}
+bar
+{{if false}}hi{{end}}
+baz
+{{if false}}
+hi
+{{end}}
+qux

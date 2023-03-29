@@ -1,0 +1,20 @@
+{{! trimmed whitespace in template preamble }}
+
+{{! ignored comment}}
+
+{{let foo: 123}}
+
+{{let bar: 123}}
+
+{{if true}}
+
+{{foo}}
+
+{{end}}
+
+{{end}}
+
+baz
+
+{{! ignored comment}}
+

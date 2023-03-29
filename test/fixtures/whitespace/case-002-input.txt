@@ -1,0 +1,5 @@
+{{! remove comment lines }}
+foo
+{{! remove comment lines }}
+bar
+{{! remove comment lines }}
