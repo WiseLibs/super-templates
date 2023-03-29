@@ -60,7 +60,7 @@ describe('template validation', function () {
 	});
 	it('forbids non-string-literals as "include" paths', async function () {
 		const filename = await createTempFile('foo');
-		await expectError('Include path must be a string literal', createTemplate(`{{include \`${filename.replace(/`/g, '\\`')}\`}}{{end}}`));
+		await expectError('Include path must be a string literal', createTemplate(`{{include \`${filename.replace(/[`/\\]/g, '\\$&')}\`}}{{end}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{include ${JSON.stringify(filename)} + ""}}{{end}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{include (${JSON.stringify(filename)})}}{{end}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{> \`${filename.replace(/`/g, '\\`')}\`}}`));

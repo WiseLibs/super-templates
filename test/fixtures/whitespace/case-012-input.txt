@@ -9,7 +9,7 @@ foo{{transform __block}}
 {{end}}qux
 {{if true}}
 	hello
-		({{transform __block.replace(/\n/g, 'X').replace(/\t/g, 'Y')}}
+		({{transform __block.replace(/\r?\n/g, 'X').replace(/\t/g, 'Y')}}
 			{{if true}}
 				foo
 			{{end}}
