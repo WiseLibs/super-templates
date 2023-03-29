@@ -63,7 +63,7 @@ describe('template validation', function () {
 		await expectError('Include path must be a string literal', createTemplate(`{{include \`${filename.replace(/[`/\\]/g, '\\$&')}\`}}{{end}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{include ${JSON.stringify(filename)} + ""}}{{end}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{include (${JSON.stringify(filename)})}}{{end}}`));
-		await expectError('Include path must be a string literal', createTemplate(`{{> \`${filename.replace(/`/g, '\\`')}\`}}`));
+		await expectError('Include path must be a string literal', createTemplate(`{{> \`${filename.replace(/[`/\\]/g, '\\$&')}\`}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{> ${JSON.stringify(filename)} + ""}}`));
 		await expectError('Include path must be a string literal', createTemplate(`{{> (${JSON.stringify(filename)})}}`));
 	});
