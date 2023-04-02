@@ -31,7 +31,9 @@ module.exports = (rootAST) => {
 		}
 	}
 
-	return templates.get(rootAST);
+	const rootTemplate = templates.get(rootAST);
+	rootTemplate.parameters = findParameters(rootAST);
+	return rootTemplate;
 
 	function convertWithIndentation(indentation) {
 		return function convert(node) {
@@ -161,4 +163,23 @@ function findRecursiveASTs(rootAST) {
 	})(rootAST, new Set());
 
 	return recursive;
+}
+
+// Finds the names of all template parameters within the given AST.
+function findParameters(theAST) {
+	const names = new Set();
+
+	(function walk(nodes) {
+		for (const node of nodes) {
+			if (node instanceof ast.LetNode) {
+				if (!node.js) {
+					names.add(node.name);
+				}
+			}
+			walk(node.children);
+		}
+	})(theAST);
+
+	const filename = theAST[0] ? theAST[0].source.file.filename : null;
+	return { names, filename };
 }

@@ -23,20 +23,20 @@ module.exports = (rootAST) => {
 					walk(node.children);
 					if (!visited.has(node.ref)) {
 						visited.add(node.ref);
-						walkInScope(node.ref, new Map());
+						walkInScope(node.ref, new Set());
 					}
 				} else if (node instanceof ast.LetNode) {
-					const newScope = new Map(scope);
-					newScope.set(node.name, node);
+					const newScope = new Set(scope);
+					newScope.add(node.name);
 					walkInScope(node.children, newScope);
 				} else if (node instanceof ast.EachNode) {
-					const newScope = new Map(scope);
-					newScope.set(node.name, node);
-					node.indexName && newScope.set(node.indexName, node);
+					const newScope = new Set(scope);
+					newScope.add(node.name);
+					node.indexName && newScope.add(node.indexName);
 					walkInScope(node.trueBranch, newScope);
 					walk(node.falseBranch);
 				} else if (node instanceof ast.TransformNode) {
-					if (!scope.has('__block')) {
+					if (!node.js.dependencyNames.includes('__block') && node.js.names.has('__block')) {
 						node.js.dependencyNames.push('__block');
 					}
 					walk(node.children);
@@ -57,5 +57,5 @@ module.exports = (rootAST) => {
 			}
 			return dependencyNames;
 		}
-	})(rootAST, new Map());
+	})(rootAST, new Set());
 };

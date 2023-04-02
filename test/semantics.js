@@ -94,22 +94,6 @@ describe('execution semantics', function () {
 			const template = await createAsyncTemplate('foo{{UNSAFE_INJECT (await Promise.resolve("&<>\\"\'"))}}bar');
 			expect(await template()).to.equal('foo&<>"\'bar');
 		});
-		it('invokes async effects serially', async function () {
-			this.slow(500);
-			let string = 'a';
-			global.foo = async () => {
-				const currentString = string;
-				await sleep(80);
-				string += currentString;
-			};
-			try {
-				const template = await createAsyncTemplate('foo{{effect foo()}}bar{{effect foo()}}baz');
-				expect(await template()).to.equal('foobarbaz');
-			} finally {
-				delete global.foo;
-			}
-			expect(string).to.equal('aaaa');
-		});
 		it('renders async "let" blocks', async function () {
 			let template = await createAsyncTemplate('foo{{let thing: sleep(5).then(() => 123)}}{{thing.toString(16)}}{{end}}bar');
 			expect(await template()).to.equal('foo7bbar');

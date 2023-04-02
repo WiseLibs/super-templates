@@ -70,10 +70,6 @@ describe('template validation', function () {
 	it('forbids "else-if" chains in "each" blocks', async function () {
 		await expectError('\'each\' blocks cannot have \'else-if\' chains', createTemplate('{{each x: []}}foo{{else if true}}{{end}}'));
 	});
-	it('forbids template parameters in root templates', async function () {
-		await expectError('Root template cannot have template parameters', createTemplate('{{let x}}'));
-		await expectError('Root template cannot have template parameters', createTemplate('{{let x}}{{end}}'));
-	});
 	it('forbids missing "include" bindings', async function () {
 		const filename = await createTempFile('{{let x}}{{x}}');
 		await expectError('Missing template parameter \'x\'', createTemplate(`{{include ${JSON.stringify(filename)}}}`));

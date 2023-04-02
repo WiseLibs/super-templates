@@ -185,9 +185,9 @@ exports.js = (jsFuncs, ctx) => {
 			+ '\t+ "return [\\n"\n'
 			+ jsFuncs.map((js) => {
 				const location = JSON.stringify(JSON.stringify(ctx.location(js.source)));
-				const params = js.dependencyNames.length ? `{ ${js.dependencyNames.join(', ')} }` : '';
+				const params = js.dependencyNames.length ? `const { ${js.dependencyNames.join(', ')} } = arguments[0]; ` : '';
 				const body = JSON.stringify(js.source.string());
-				return `\t\t+ \`\\t{ loc: \${${location}}, exec(${params}) { return (\\n\${${body}}\\n\\t); } },\\n\`\n`
+				return `\t\t+ \`\\t{ loc: \${${location}}, exec() { ${params}return (\\n\${${body}}\\n\\t); } },\\n\`\n`
 			}).join('')
 			+ '\t+ "];"\n'
 		+ ')(helpers).map(({ exec, loc }) => trace(exec, loc));'
@@ -195,12 +195,26 @@ exports.js = (jsFuncs, ctx) => {
 };
 
 exports.root = (rootTemplate, ctx) => {
+	let parameterNames = '';
+	let location = '';
+
+	if (rootTemplate.parameters.names.size) {
+		parameterNames = `const parameterNames = [${[...rootTemplate.parameters.names].map(x => `"${x}"`).join(', ')}];\n`;
+		location = JSON.stringify(rootTemplate.parameters.filename);
+	}
+
 	return (
-		'return function template() ' + block([
+		parameterNames + 'return function template(parameters) ' + block([
+			...ifThen(parameterNames, [
+				`const bindings = getParameters(parameters, parameterNames, ${location});`,
+			], [
+				'const bindings = new Map();',
+			]),
 			'const output = [];',
 			'const state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "" };',
 			'const write = createWriter(output.push.bind(output), state);',
-			`${ctx.name(rootTemplate)}(write, state, { bindings: null, sections: new Map() });`,
+			'const ctx = { bindings, sections: new Map() };',
+			`${ctx.name(rootTemplate)}(write, state, ctx);`,
 			'return output.join("");',
 		]) + ';'
 	);

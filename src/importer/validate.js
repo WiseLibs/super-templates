@@ -10,7 +10,7 @@ module.exports = (rootAST) => {
 	const allASTs = new Map();
 
 	(function validateAST(theAST) {
-		allASTs.set(theAST, findNames(theAST, theAST === rootAST));
+		allASTs.set(theAST, findNames(theAST));
 
 		(function walk(nodes) {
 			for (const node of nodes) {
@@ -27,7 +27,7 @@ module.exports = (rootAST) => {
 };
 
 // Finds the names of all template parameters and slots within the given AST.
-function findNames(theAST, isRootAST) {
+function findNames(theAST) {
 	const parameterNames = new Set();
 	const slotNames = new Set();
 
@@ -35,7 +35,6 @@ function findNames(theAST, isRootAST) {
 		for (const node of nodes) {
 			if (node instanceof ast.LetNode) {
 				if (!node.js) {
-					if (isRootAST) error.rootParameter(node);
 					parameterNames.add(node.name);
 				}
 			} else if (node instanceof ast.SlotNode) {
@@ -111,9 +110,6 @@ function validateInclude(includeNode, { parameterNames, slotNames }) {
 
 // Possible error messages.
 const error = {
-	rootParameter(node) {
-		node.source.error('Root template cannot have template parameters').throw();
-	},
 	missingParameter(node, missing) {
 		const names = missing.map(name => `'${name}'`).join(', ');
 		const plural = missing.length > 1 ? 's:' : '';

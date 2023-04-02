@@ -23,6 +23,7 @@ exports.createFunction = (code, helpers) => {
 		'Scope',
 		'AsyncScope',
 		'memo',
+		'getParameters',
 		'trace',
 		'traceAsync',
 		'helpers',
@@ -35,6 +36,7 @@ exports.createFunction = (code, helpers) => {
 		lib.Scope,
 		lib.AsyncScope,
 		lib.memo,
+		lib.getParameters,
 		lib.trace,
 		lib.traceAsync,
 		Object.assign({}, helpers)

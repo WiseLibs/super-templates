@@ -260,6 +260,30 @@ function memo(getter) {
 }
 
 /*
+	Creates a Map of template parameter bindings, given a parameters object.
+	A source location is needed in case of error.
+ */
+
+function getParameters(parameters, parameterNames, location) {
+	const bindings = new Map();
+	const missing = new Set(parameterNames);
+	if (parameters != null) {
+		for (const name of parameterNames) {
+			if ({}.hasOwnProperty.call(parameters, name)) {
+				bindings.set(name, parameters[name]);
+				missing.delete(name);
+			}
+		}
+	}
+	if (missing.size) {
+		const names = [...missing].map(name => `'${name}'`).join(', ');
+		const plural = missing.size > 1 ? 's:' : '';
+		throw createRuntimeError(new Error(`Template needs parameter${plural} ${names}`), location);
+	}
+	return bindings;
+}
+
+/*
 	Wraps the given function (which should be an embedded/compiled JSFunc) so
 	that if it throws an exception, a nicely formatted error will be raised,
 	containing the source location.
@@ -311,6 +335,8 @@ module.exports = {
 	Scope,
 	AsyncScope,
 	memo,
+	getParameters,
 	trace,
 	traceAsync,
+	escapeHTML,
 };

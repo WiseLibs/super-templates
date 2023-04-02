@@ -10,6 +10,7 @@
   },
   "license": "MIT",
   "main": "src/index.js",
+  "types": "src/types.d.ts",
   "scripts": {
     "test": "mocha --exit --slow=100 --timeout=5000"
   },

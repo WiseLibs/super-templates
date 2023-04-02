@@ -9,7 +9,7 @@ exports.node = new Map([
 	[asm.TemplateFunc, (node, ctx, render) => {
 		const children = render(node.children);
 		return (
-			`async function ${ctx.name(node)}(ctx) ` + block([
+			`function ${ctx.name(node)}(ctx) ` + block([
 				'const scope = new AsyncScope();',
 				'const { store, consume, clear } = createAsyncStorage();',
 				prepare(children),
@@ -86,7 +86,7 @@ exports.node = new Map([
 			: `${ctx.name(node.js)}()`;
 
 		return {
-			prepare: `await ${value};`,
+			prepare: `${value};`,
 			print: '',
 		};
 	}],
@@ -94,11 +94,11 @@ exports.node = new Map([
 		return {
 			prepare: block([
 				`const prepare = ctx.sections.get("${node.name}");`,
-				`if (prepare) store("${ctx.name(node)}", prepare());`,
+				`if (prepare) store("${ctx.name(node)}", Promise.resolve(prepare()));`,
 			]),
 			print: block([
-				`const print = await consume("${ctx.name(node)}");`,
-				'if (print) await print(write, state);',
+				`const print = consume("${ctx.name(node)}");`,
+				'if (print) await (await print)(write, state);',
 			]),
 		};
 	}],
@@ -127,7 +127,7 @@ exports.node = new Map([
 				...[...node.sections].map(([name, section]) => {
 					const sectionChildren = render(section);
 					return (
-						`sections.set("${name}", async () => ` + block([
+						`sections.set("${name}", () => ` + block([
 							'const { store, consume, clear } = createAsyncStorage();',
 							prepare(sectionChildren),
 							'return async (write, state) => ' + block([
@@ -139,7 +139,8 @@ exports.node = new Map([
 						]) + ');'
 					);
 				}),
-				`store("${ctx.name(node)}", ${ctx.name(node.ref)}({ bindings, sections }));`,
+				`const print = ${ctx.name(node.ref)}({ bindings, sections });`,
+				`store("${ctx.name(node)}", Promise.resolve(print));`,
 			]),
 			print: `await (await consume("${ctx.name(node)}"))(write, state);`,
 		};
@@ -209,7 +210,7 @@ exports.node = new Map([
 		return {
 			prepare: prepareBranches
 				? (
-					`store("${ctx.name(node)}", ${condition}.then(async (bool) => ` + block([
+					`store("${ctx.name(node)}", ${condition}.then((bool) => ` + block([
 						prepareBranches,
 						'return !!bool;',
 					]) + '));'
@@ -343,9 +344,9 @@ exports.js = (jsFuncs, ctx) => {
 			+ '\t+ "return [\\n"\n'
 			+ jsFuncs.map((js) => {
 				const location = JSON.stringify(JSON.stringify(ctx.location(js.source)));
-				const params = js.dependencyNames.length ? `{ ${js.dependencyNames.join(', ')} }` : '';
+				const params = js.dependencyNames.length ? `const { ${js.dependencyNames.join(', ')} } = arguments[0]; ` : '';
 				const body = JSON.stringify(js.source.string());
-				return `\t\t+ \`\\t{ loc: \${${location}}, async exec(${params}) { return (\\n\${${body}}\\n\\t); } },\\n\`\n`
+				return `\t\t+ \`\\t{ loc: \${${location}}, async exec() { ${params}return (\\n\${${body}}\\n\\t); } },\\n\`\n`
 			}).join('')
 			+ '\t+ "];"\n'
 		+ ')(helpers).map(({ exec, loc }) => traceAsync(exec, loc));'
@@ -353,10 +354,24 @@ exports.js = (jsFuncs, ctx) => {
 };
 
 exports.root = (rootTemplate, ctx) => {
+	let parameterNames = '';
+	let location = '';
+
+	if (rootTemplate.parameters.names.size) {
+		parameterNames = `const parameterNames = [${[...rootTemplate.parameters.names].map(x => `"${x}"`).join(', ')}];\n`;
+		location = JSON.stringify(rootTemplate.parameters.filename);
+	}
+
 	return (
-		'return function template() ' + block([
+		parameterNames + 'return function template(parameters) ' + block([
 			'return createAsyncIterable(async (output) => ' + block([
-				`const print = await ${ctx.name(rootTemplate)}({ bindings: null, sections: new Map() });`,
+				ifThen(parameterNames, [
+					`const bindingValues = getParameters(parameters, parameterNames, ${location});`,
+					'const bindings = new Map([...bindingValues].map(([k, v]) => [k, (async () => v)]));',
+				], [
+					'const bindings = new Map();',
+				]),
+				`const print = ${ctx.name(rootTemplate)}({ bindings, sections: new Map() });`,
 				'const state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "" };',
 				'const write = createWriter(output, state);',
 				'await print(write, state);',
