@@ -2,8 +2,8 @@
 const { Source } = require('../source');
 
 /*
-	These nodes form the intermediate-representation (IR) of a functional
-	template, used during optimization and code generation.
+	These nodes form the intermediate-representation (IR) of a super template,
+	used during optimization and code generation.
  */
 
 class ASM {}

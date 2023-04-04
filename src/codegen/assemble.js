@@ -3,8 +3,8 @@ const { ast } = require('../parser');
 const asm = require('./asm');
 
 /*
-	Generates the intermediate-representation (IR) of a functional template,
-	given its AST.
+	Generates the intermediate-representation (IR) of a super template, given
+	its AST.
  */
 
 module.exports = (rootAST) => {

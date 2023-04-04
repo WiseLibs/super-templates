@@ -1,11 +1,11 @@
 'use strict';
 const fs = require('fs/promises');
 const loadCases = require('./fixtures/load-cases');
-const FT = require('../.');
+const ST = require('../.');
 
 async function createTemplate(filename, options = { syncOnly: true }) {
-	const compiledTemplate = await FT.compile(filename, options);
-	return FT.create(compiledTemplate);
+	const compiledTemplate = await ST.compile(filename, options);
+	return ST.create(compiledTemplate);
 }
 
 async function createAsyncTemplate(filename) {

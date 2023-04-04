@@ -1,11 +1,11 @@
 'use strict';
 const fs = require('fs/promises');
-const FT = require('../.');
+const ST = require('../.');
 
 async function createTemplate(content, options = { syncOnly: true }) {
 	const filename = await createTempFile(content);
-	const compiledTemplate = await FT.compile(filename, options);
-	return FT.create(compiledTemplate);
+	const compiledTemplate = await ST.compile(filename, options);
+	return ST.create(compiledTemplate);
 }
 
 async function createAsyncTemplate(content) {
@@ -36,8 +36,8 @@ describe('recursive templates', function () {
 				const filename1 = await createTempFile('');
 				const filename2 = await createTempFile(`{{let y}}{{include ${JSON.stringify(filename1)}}}{{y}}, {{end}}{{end}}`);
 				await fs.writeFile(filename1, `{{slot}}{{if x.y > 0}}{{> ${JSON.stringify(filename2)} with y: x.y--}}{{else}}done{{end}}`);
-				const compiledTemplate = await FT.compile(filename1, { syncOnly: true });
-				const template = FT.create(compiledTemplate);
+				const compiledTemplate = await ST.compile(filename1, { syncOnly: true });
+				const template = ST.create(compiledTemplate);
 				expect(template()).to.equal('5, 4, 3, 2, 1, done');
 				expect(global.x.y).to.equal(0);
 			} finally {
@@ -58,8 +58,8 @@ describe('recursive templates', function () {
 				const filename1 = await createTempFile('');
 				const filename2 = await createTempFile(`{{let y}}{{include ${JSON.stringify(filename1)}}}{{y}}, {{end}}{{end}}`);
 				await fs.writeFile(filename1, `{{slot}}{{if x.y > 0}}{{> ${JSON.stringify(filename2)} with y: x.y--}}{{else}}done{{end}}`);
-				const compiledTemplate = await FT.compile(filename1, { syncOnly: false });
-				const template = wrapAsyncTemplate(FT.create(compiledTemplate));
+				const compiledTemplate = await ST.compile(filename1, { syncOnly: false });
+				const template = wrapAsyncTemplate(ST.create(compiledTemplate));
 				expect(await template()).to.equal('5, 4, 3, 2, 1, done');
 				expect(global.x.y).to.equal(0);
 			} finally {

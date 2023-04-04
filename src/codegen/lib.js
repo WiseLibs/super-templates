@@ -290,7 +290,7 @@ function getParameters(parameters, parameterNames, location) {
  */
 
 function trace(fn, location) {
-	return function ft_trace(arg) {
+	return function st_trace(arg) {
 		try {
 			return fn(arg);
 		} catch (err) {
@@ -300,7 +300,7 @@ function trace(fn, location) {
 }
 
 function traceAsync(fn, location) {
-	return async function ft_trace(arg) {
+	return async function st_trace(arg) {
 		try {
 			return await fn(arg);
 		} catch (err) {
@@ -316,7 +316,7 @@ function createRuntimeError(err, location, isEmbeddedJS = false) {
 		err.message += extraMessage;
 		err.stack = `${err}\n    at ${location}` + (err.stack || '')
 			.split(/\r?\n/)
-			.filter(str => /^\s+at (?!ft_(?:\d|trace))/.test(str))
+			.filter(str => /^\s+at (?!st_(?:\d|trace))/.test(str))
 			.map(str => '\n' + str)
 			.join('')
 	} else {

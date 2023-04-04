@@ -5,7 +5,7 @@ const { tk } = require('../lexer');
 const NOT_WHITESPACE = /[^\x09\x0b\x0c\ufeff\x0a\x0d\u2028\u2029\p{Space_Separator}]/u;
 
 /*
-	These nodes form the AST of a functional template file.
+	These nodes form the AST of a super template file.
  */
 
 class Node {

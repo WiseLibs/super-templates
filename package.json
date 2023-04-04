@@ -1,12 +1,12 @@
 {
-  "name": "functional-templates",
+  "name": "super-templates",
   "version": "1.0.0",
-  "description": "A functional HTML/XML templating system for Node.js",
+  "description": "An async HTML/XML templating language for Node.js",
   "author": "Joshua Wise <joshuathomaswise@gmail.com>",
-  "homepage": "https://github.com/JoshuaWise/functional-templates#readme",
+  "homepage": "https://github.com/JoshuaWise/super-templates#readme",
   "repository": {
     "type": "git",
-    "url": "git://github.com/JoshuaWise/functional-templates.git"
+    "url": "git://github.com/JoshuaWise/super-templates.git"
   },
   "license": "MIT",
   "main": "src/index.js",

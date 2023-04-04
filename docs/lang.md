@@ -1,10 +1,10 @@
-# Template language guide
+# Language guide
 
-#### Introduction
+##### Introduction
 
 A "template" is a text file (usually HTML, XML, or Markdown), with embedded *template expressions*. A template expression is a `{{`, some contents, followed by a `}}`. When a template is executed, these expressions are replaced with content depending on the expression.
 
-#### Basic features:
+##### Basic features:
 
 - [Simple expressions](#simple-expressions)
 - ["let" blocks](#let-blocks)
@@ -12,13 +12,13 @@ A "template" is a text file (usually HTML, XML, or Markdown), with embedded *tem
 - ["each" blocks](#each-blocks)
 - [Comments](#comments)
 
-#### Template composition (partials):
+##### Template composition (partials):
 
 - [Included templates](#included-templates)
 - [Template parameters](#template-parameters)
 - [Template slots and sections](#template-slots-and-sections)
 
-#### Advanced features:
+##### Advanced features:
 
 - [Effects](#effects)
 - [Raw expressions](#raw-expressions)
@@ -32,11 +32,11 @@ Simple expressions will print the result of the embedded JavaScript expression.
 <p>Here is a random number: {{Math.random()}}</p>
 ```
 
-The JavaScript must evaluate to a string, number, or [bigint](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). If it evaluates to anything else, or if it evaluates to [`NaN`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NaN), an error will be thrown.
+The JavaScript must evaluate to a string, number, or [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt). If it evaluates to anything else, or if it evaluates to [`NaN`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NaN), an error will be thrown.
 
-#### Asynchronous expressions
+### Asynchronous expressions
 
-Any embedded JavaScript expression can also evaluate to a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), which means you can call async functions from within templates. You can even use `await` syntax within any embedded JavaScript expression.
+Any embedded JavaScript expression can evaluate to a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise), which means you can call async functions from within templates. You can even use `await` syntax within any embedded JavaScript expression.
 
 ```
 <p>{{(await getAlertMessage()).toUpperCase()}}</p>
@@ -44,7 +44,7 @@ Any embedded JavaScript expression can also evaluate to a [Promise](https://deve
 
 ## "let" blocks
 
-A "let" block allows you to declare a variable within a template. The variable will be accessible from any template expression inside the block.
+A "let" block allows you to declare a variable within a template. The variable will be accessible from any expression inside the block.
 
 ```
 {{let user: getUserData()}}
@@ -52,7 +52,7 @@ A "let" block allows you to declare a variable within a template. The variable w
 {{end}}
 ```
 
-For convenience, "let" blocks don't need the `{{end}}` token if they are declared at the top of the file.
+For convenience, "let" blocks don't need an `{{end}}` token if they're declared at the top of the file.
 
 ```
 {{let user: getUserData()}}
@@ -64,11 +64,11 @@ For convenience, "let" blocks don't need the `{{end}}` token if they are declare
 </div>
 ```
 
-Just like other template expressions, the variable assignment can evaluate to a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise). When referenced by other expressions, the variable will be a regular value (not a promise).
+Like all other expressions, the variable assignment can evaluate to a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise). However, when referenced by other expressions, the variable will be a regular value (not a promise), so you don't need to manually `await` it.
 
 ## "if" blocks
 
-An "if" block allows you to conditionally execute part of a template, depending on some condition. The condition can be any JavaScript expression.
+An "if" block allows you to conditionally execute part of a template, depending on some condition.
 
 ```
 {{if payment.isOverdue()}}
@@ -86,7 +86,7 @@ If you specify an `{{else}}` clause, it will be executed when the condition is [
 {{end}}
 ```
 
-You can use `else-if` chains, just like regular programming languages.
+You can use "else if" chains, just like in regular programming languages.
 
 ```
 {{if user.age >= 21}}
@@ -100,7 +100,7 @@ You can use `else-if` chains, just like regular programming languages.
 
 ## "each" blocks
 
-An "each" block allows you to loop over part of a template, executing it once for each item in an array (or any [iterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_iterable_protocol) or [async iterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols) object).
+An "each" block allows you to loop over part of a template, executing it once for each item in an [iterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_iterable_protocol) or [async iterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols) object.
 
 ```
 <ul>
@@ -112,7 +112,7 @@ An "each" block allows you to loop over part of a template, executing it once fo
 </ul>
 ```
 
-If you specify an `{{else}}` clause, it will be executed when the given array/iterable is empty.
+If you specify an `{{else}}` clause, it will be executed when the given iterable is empty.
 
 ```
 {{each item: shop.getInventory()}}
@@ -126,15 +126,15 @@ If you specify an `{{else}}` clause, it will be executed when the given array/it
 {{end}}
 ```
 
-You can also declare a second variable, which is the index of the current iteration (starting at `0`).
+You can also get the index of the current iteration (starting at `0`) by declaring a second variable.
 
 ```
 <ul>
-    {{each day, index: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]}}
+    {{each day, index: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}}
         <li>
             {{day}}
             {{if index === 0}}
-                (this is the first day of the work week)
+                (this is the first day of the week)
             {{end}}
         </li>
     {{end}}
@@ -170,7 +170,7 @@ Templates can be "included" within other templates, making them highly reusable.
 
 ### Template parameters
 
-Included templates can define *template parameters*, which are simply "let" blocks without an assigned value. When including such a template, you can provide values to these parameters to customize the behavior of the included template.
+Templates can define *template parameters*, which are simply "let" blocks without an assigned value. When including such a template, you can provide values to these parameters to customize the behavior of the included template.
 
 ##### head.html
 
@@ -204,14 +204,14 @@ Included templates can define *template parameters*, which are simply "let" bloc
 
 ### Template slots and sections
 
-Included templates can define `{{slot}}` expressions, which get filled in by the parent template. When doing so, the parent template uses an "include" block instead of the previous `{{> ...}}` syntax.
+Templates can define `{{slot}}` expressions, which get filled in by the parent template. When doing so, the parent template uses an "include" block instead of the previous `{{> ...}}` syntax.
 
 ##### base.html
 
 ```
 <html>
     <head>
-        {{> "./head.html"}}
+        <title>My Site</title>
     </head>
     <body>
         {{slot}}
@@ -230,7 +230,7 @@ Included templates can define `{{slot}}` expressions, which get filled in by the
 
 The content within the "include" block will be inserted where the `{{slot}}` is in the included template.
 
-> The syntax `{{> "foo.html"}}` is really just a shorthand for an empty "include" block (`{{include "foo.html"}}{{end}}`). Both syntaxes behave the same way, and both support template parameters.
+> The syntax `{{> "foo.html"}}` is really just a shorthand for an empty "include" block (`{{include "foo.html"}}{{end}}`). Both syntaxes have the same behavior, and both support template parameters.
 
 ### Named slots and sections
 
@@ -262,7 +262,9 @@ Besides a simple `{{slot}}`, templates can define any number of *named slots*. P
 {{end}}
 ```
 
-Like "let" blocks, "include" blocks don't need the `{{end}}` token if they are declared at the top of the file. This lets you define pleasantly formatted templates with reusable layouts. The result is similar to "template inheritance" in other systems.
+> Sections are always optional. If a section is not provided, the corresponding slot won't display anything.
+
+Like "let" blocks, "include" blocks don't need an `{{end}}` token if they're declared at the top of the file. Here is an example of using all these features together:
 
 ```
 {{let article: getLatestArticle()}}
@@ -278,18 +280,16 @@ Like "let" blocks, "include" blocks don't need the `{{end}}` token if they are d
 </main>
 ```
 
-> Sections are always optional. If a section is not provided, the corresponding `{{slot}}` won't display anything.
-
 ## Effects
 
-Sometimes it can be useful to execute side-effects from a template, without actually affecting the output. For example, perhaps you want a template to write some logs. For this, you can use `effect` expressions.
+Sometimes it can be useful to execute side-effects from a template, without actually affecting the output. For example, perhaps you want to write some logs. For this, you can use "effect" expressions.
 
 ```
 {{let user: getUser()}}
 {{effect console.log(`generating page for user ${user.id}`)}}
 ```
 
-Effects always occur in the background, in parallel with the rest of template execution. If an effect throws an error (or it returns a rejected Promise), it will cause an [`unhandledRejection`](https://nodejs.org/api/process.html#event-unhandledrejection). You are responsible for catching and handling any errors that may occur within an effect.
+Effects always occur in the background, in parallel with the rest of the template execution. If an effect throws an error (or if it returns a rejected Promise), it will cause an [unhandledRejection](https://nodejs.org/api/process.html#event-unhandledrejection). You are responsible for catching and handling any errors that may occur within an effect.
 
 ## Raw expressions
 
@@ -301,7 +301,7 @@ When using normal expressions, the embedded content will automatically be HTML-e
 
 ## "transform" blocks
 
-A "transform" block allows you to transform part of a template through an arbitrary JavaScript expression. For example, you could transform Markdown into HTML. The content of the "transform" block is available via the special variable `__block`.
+A "transform" block allows you to transform part of a template through an arbitrary JavaScript expression. For example, you could transform Markdown into HTML. The content of a "transform" block is available via the special variable `__block`.
 
 ```
 {{transform convertMarkdownToHTML(__block)}}
@@ -317,6 +317,6 @@ A "transform" block allows you to transform part of a template through an arbitr
 {{end}}
 ```
 
-This can be a very powerful feature, but there are some downsides to be aware of. Firstly, all output within the "transform" block gets buffered, so that it can be transformed as a single string. This can eliminate the performance benefits of streaming, especially if applied to large parts of the page. Secondly, the output of a "transform" block is not HTML-escaped, so you must make sure that the transformation expression doesn't inject any untrusted content (or else you risk a [cross-site scripting](https://en.wikipedia.org/wiki/Cross-site_scripting) attack). Any expressions *within* the "transform" block are still HTML-escaped as normal.
+This can be a very powerful feature, but there are some downsides to be aware of. Firstly, all output within the "transform" block gets buffered, so that it can be transformed as a single string. This can eliminate the performance benefits of streaming, especially if applied to large parts of the page. Secondly, the output of a "transform" block is not HTML-escaped, so you must make sure that the transformation expression doesn't inject any untrusted content (or else you risk a [cross-site scripting](https://en.wikipedia.org/wiki/Cross-site_scripting) attack). However, any expressions *within* the "transform" block will still be HTML-escaped as normal.
 
-Even if the content within a "transform" block is indented, the content provided via `__block` will not be indented.
+The content within `__block` will not be indented, even if the "transform" block itself is indented.

@@ -1,4 +1,4 @@
-declare namespace FunctionalTemplates {
+declare namespace SuperTemplates {
 	function compile(filename: string, options?: CompileOptions): Promise<string>;
 	function create(compiledTemplate: string, helpers?: Helpers): TemplateFunction;
 	function escape(str: string): string;
@@ -17,4 +17,4 @@ declare namespace FunctionalTemplates {
 	type AsyncTemplateFunction = () => AsyncIterableIterator<string>;
 }
 
-export = FunctionalTemplates;
+export = SuperTemplates;

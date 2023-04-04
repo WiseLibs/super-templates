@@ -22,7 +22,7 @@ module.exports = class CodegenContext {
 		}
 		let name = this._names.get(obj);
 		if (name === undefined) {
-			name = `ft_${this._nextId++}`;
+			name = `st_${this._nextId++}`;
 			this._names.set(obj, name);
 			this.named.push(obj);
 		}

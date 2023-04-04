@@ -1,10 +1,10 @@
 'use strict';
-const FT = require('../.');
+const ST = require('../.');
 
 async function createTemplate(content, options = { syncOnly: true }) {
 	const filename = await createTempFile(content);
-	const compiledTemplate = await FT.compile(filename, options);
-	return FT.create(compiledTemplate);
+	const compiledTemplate = await ST.compile(filename, options);
+	return ST.create(compiledTemplate);
 }
 
 async function createAsyncTemplate(content) {
