@@ -90,6 +90,7 @@ This can drastically reduce the time it takes for your page to load. For example
 
 <details>
 <summary>Click here for more details</summary>
+<br>
 
 With `super-templates`, templates compile into [async generator functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols) which yield strings as soon as possible, without waiting for the entire template to finish executing. You can convert it into a stream by using [`Readable.from()`](https://nodejs.org/api/stream.html#streamreadablefromiterable-options).
 
