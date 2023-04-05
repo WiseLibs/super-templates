@@ -80,7 +80,7 @@ In most other templating languages, the only way to know what data the template 
 
 ### Less "glue code"
 
-In most other templating languages, each template is coupled to its own "data-fetching" function, which needs to format data specifically for that template. With `super-templates`, templates are capable of calling async functions to fetch data on their own, and they can use arbitrary JavaScript to format data as needed for display purposes.
+In most other templating languages, each template depends on a separate "data-fetching" function, which needs to format data specifically for that template. With `super-templates`, templates are capable of calling async functions to fetch data on their own, and they can use arbitrary JavaScript to format data as needed for display purposes.
 
 ### Lowest possible latency
 
