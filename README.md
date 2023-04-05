@@ -1,6 +1,6 @@
 # super-templates [![test](https://github.com/WiseLibs/super-templates/actions/workflows/test.yml/badge.svg)](https://github.com/WiseLibs/super-templates/actions/workflows/test.yml)
 
-`super-templates` is an HTML/XML templating language similar to [mustache](https://mustache.github.io/) and [handlebars](https://handlebarsjs.com/guide/#what-is-handlebars). It supports async/await and streaming. It's designed so that you won't need to prepare custom-formatted data for each template.
+`super-templates` is an HTML/XML templating language similar to [mustache](https://mustache.github.io/) and [handlebars](https://handlebarsjs.com/guide/#what-is-handlebars). It supports async/await and streaming. It's designed so that you won't need to prepare custom-formatted data for each template; each template is capable of efficiently fetching its own data, declaratively.
 
 ## Documentation
 
