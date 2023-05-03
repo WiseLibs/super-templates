@@ -10,24 +10,30 @@ const { parse, ast } = require('../parser');
 module.exports = (initialFilename, resolve, load) => {
 	return new Promise((res, rej) => {
 		const memo = new Map();
+		const includes = new Map();
 		let pending = 0;
 		let aborted = false;
 
-		function importFile(filename, source) {
-			let cached = memo.get(filename);
-			if (cached) return cached;
-			pending += 1;
-			const promise = importNewFile(filename, source);
-			promise.then(onDone, onError);
-			memo.set(filename, promise);
-			return promise;
+		function importFile(filename, includeNode) {
+			let promise = memo.get(filename);
+			if (!promise) {
+				pending += 1;
+				promise = importNewFile(filename, includeNode?.js.source);
+				promise.then(onDone, onError);
+				memo.set(filename, promise);
+			}
+			if (includeNode) {
+				let arr = includes.get(filename);
+				if (!arr) includes.set(filename, arr = []);
+				arr.push(includeNode);
+			}
 		}
 
 		function importNewFile(filename, source) {
 			const processIncludes = (nodes) => {
 				for (const node of nodes) {
 					if (node instanceof ast.IncludeNode) {
-						node.ref = importFile(resolve(node.path, filename), node.js.source);
+						resolveInclude(node, filename);
 					}
 					processIncludes(node.children);
 				}
@@ -40,7 +46,7 @@ module.exports = (initialFilename, resolve, load) => {
 					processIncludes(nodes);
 					return nodes;
 				}, (err) => {
-					if (source && err.syscall) {
+					if (source && err != null && (err.syscall || err.expose)) {
 						if (err.code === 'ENOENT') {
 							source.error(`Could not resolve "${filename}"`).throw();
 						}
@@ -50,9 +56,33 @@ module.exports = (initialFilename, resolve, load) => {
 				});
 		}
 
+		function resolveInclude(includeNode, resolveFrom) {
+			pending += 1;
+			return new Promise(r => r(resolve(includeNode.path, resolveFrom)))
+				.then((filename) => {
+					if (aborted) return;
+					importFile(filename, includeNode);
+				}, (err) => {
+					if (err != null && err.expose) {
+						includeNode.js.source.error(err.message).throw();
+					}
+					throw err;
+				})
+				.then(onDone, onError);
+		}
+
+		async function annotateIncludes() {
+			for (const [filename, includeNodes] of includes) {
+				const theAST = await memo.get(filename);
+				for (const includeNode of includeNodes) {
+					includeNode.ref = theAST;
+				}
+			}
+		}
+
 		function onDone() {
 			if (!aborted && --pending === 0) {
-				res(memo.get(initialFilename).then(unwrapPromises));
+				res(annotateIncludes().then(() => memo.get(initialFilename)));
 			}
 		}
 
@@ -64,20 +94,3 @@ module.exports = (initialFilename, resolve, load) => {
 		importFile(initialFilename);
 	});
 };
-
-async function unwrapPromises(nodes) {
-	for (const node of nodes) {
-		if (node instanceof ast.IncludeNode) {
-			if (node.ref instanceof Promise) {
-				node.ref = await node.ref;
-				await unwrapPromises(node.children);
-				await unwrapPromises(node.ref);
-			} else if (!Array.isArray(node.ref)) {
-				throw new TypeError('IncludeNode ref should be an array');
-			}
-		} else {
-			await unwrapPromises(node.children);
-		}
-	}
-	return nodes;
-}

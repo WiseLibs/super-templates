@@ -10,7 +10,7 @@ declare namespace SuperTemplates {
 	}
 
 	type Helpers = Record<string | number | symbol, any>;
-	type ResolveFunction = (includeString: string, resolveFrom: string) => string;
+	type ResolveFunction = (includeString: string, resolveFrom: string) => string | Promise<string>;
 	type LoadFunction = (filename: string) => string | Promise<string>;
 	type TemplateFunction = SyncTemplateFunction | AsyncTemplateFunction;
 	type SyncTemplateFunction = () => string;
