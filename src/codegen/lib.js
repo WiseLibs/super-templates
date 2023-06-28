@@ -1,5 +1,6 @@
 'use strict';
 const { Readable } = require('stream');
+const { nextTick } = process;
 
 /*
 	This function checks that the given value is something that can be inserted
@@ -95,11 +96,17 @@ function isNewlineChar(char) {
 	The initializer function may return a promise, indicating when no more
 	output will be generated. Unlike an async generator, this async iterator
 	generates output eagerly, buffering output until it is consumed.
+
+	If the optimizeStrings argument is true, then all values written to the
+	async iterator must be strings, and any strings written within the same
+	event loop tick will be joined together, reducing the total number of
+	strings yielded by the async iterator.
  */
 
-function createAsyncIterable(initializer) {
-	const requests = [];
+function createAsyncIterable(initializer, optimizeStrings = false) {
+	const requests = []; // TODO: this could be optimized by using a real queue data structure
 	let buffer = []; // TODO: this could be optimized by using a real queue data structure
+	let tickBuffer = [];
 	let isEnded = false;
 	let isDone = false;
 	let isError = false;
@@ -107,7 +114,11 @@ function createAsyncIterable(initializer) {
 
 	const onWrite = (value) => {
 		if (!isEnded) {
-			if (requests.length) {
+			if (optimizeStrings) {
+				if (tickBuffer.push(value) === 1) {
+					nextTick(onTick);
+				}
+			} else if (requests.length) {
 				requests.shift()({ value, done: false });
 			} else {
 				buffer.push(value);
@@ -115,7 +126,7 @@ function createAsyncIterable(initializer) {
 		}
 	};
 	const onFinish = () => {
-		if (!buffer.length) {
+		if (!buffer.length && !tickBuffer.length) {
 			isDone = true;
 			while (requests.length) {
 				requests.shift()({ value: undefined, done: true });
@@ -125,12 +136,30 @@ function createAsyncIterable(initializer) {
 	const onCancel = (err) => {
 		if (!isDone) {
 			buffer = [];
+			tickBuffer = [];
 			isEnded = true;
 			isDone = true;
 			isError = true;
 			error = err;
 			while (requests.length) {
 				requests.shift()(Promise.reject(err));
+			}
+		}
+	};
+	const onTick = () => {
+		if (!isDone) {
+			let value;
+			if (tickBuffer.length === 1) {
+				value = tickBuffer.pop();
+			} else {
+				value = tickBuffer.join('');
+				tickBuffer = [];
+			}
+			if (requests.length) {
+				requests.shift()({ value, done: false });
+				isEnded && onFinish();
+			} else {
+				buffer.push(value);
 			}
 		}
 	};

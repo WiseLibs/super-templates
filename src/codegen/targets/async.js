@@ -375,7 +375,7 @@ exports.root = (rootTemplate, ctx) => {
 				'const state = { atNewline: true, blockHasContent: false, pendingNewline: "", indentation: "" };',
 				'const write = createWriter(output, state);',
 				'await print(write, state);',
-			]) + ');',
+			]) + ', true);',
 		]) + ';'
 	);
 };
