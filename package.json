@@ -1,6 +1,6 @@
 {
   "name": "super-templates",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "An async HTML/XML templating language for Node.js",
   "author": "Joshua Wise <joshuathomaswise@gmail.com>",
   "homepage": "https://github.com/WiseLibs/super-templates#readme",
