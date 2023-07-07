@@ -104,6 +104,6 @@ describe('import features', function () {
 		const filename = await createTempFile('{{> "HELLO"}}');
 		const resolve = str => str;
 		const load = str => fs.promises.readFile(str, 'utf8');
-		await expectError('Could not resolve "HELLO"', () => ST.compile(filename, { resolve, load }), true);
+		await expectError('Could not resolve \'HELLO\'', () => ST.compile(filename, { resolve, load }), true);
 	});
 });

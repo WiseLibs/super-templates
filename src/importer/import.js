@@ -48,7 +48,7 @@ module.exports = (initialFilename, resolve, load) => {
 				}, (err) => {
 					if (source && err != null && (err.syscall || err.expose)) {
 						if (err.code === 'ENOENT') {
-							source.error(`Could not resolve "${filename}"`).throw();
+							source.error(`Could not resolve '${filename}'`).throw();
 						}
 						source.error(err.message).throw();
 					}
