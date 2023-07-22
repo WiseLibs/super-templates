@@ -64,16 +64,16 @@ describe('scope resolution', function () {
 		});
 		it('throws when the root template is missing parameter bindings', async function () {
 			let template = await createTemplate('{{let x}}foo{{x}}bar{{end}}');
-			await expectError('Template needs parameter \'x\'', () => template());
-			await expectError('Template needs parameter \'x\'', () => template(null));
-			await expectError('Template needs parameter \'x\'', () => template({ y: 999 }));
+			await expectError('Template used undefined parameter \'x\'', () => template());
+			await expectError('Template used undefined parameter \'x\'', () => template(null));
+			await expectError('Template used undefined parameter \'x\'', () => template({ y: 999 }));
 			template = await createTemplate('{{let x}}foo{{let y}}{{x + y}}{{end}}bar{{end}}');
-			await expectError('Template needs parameters: \'x\', \'y\'', () => template());
-			await expectError('Template needs parameters: \'x\', \'y\'', () => template(null));
-			await expectError('Template needs parameters: \'x\', \'y\'', () => template({ z: 5 }));
-			await expectError('Template needs parameter \'x\'', () => template({ y: 999 }));
-			await expectError('Template needs parameter \'y\'', () => template({ x: 999 }));
-			await expectError('Template needs parameter \'y\'', () => template({ x: 999, z: 5 }));
+			await expectError('Template used undefined parameters: \'x\', \'y\'', () => template());
+			await expectError('Template used undefined parameters: \'x\', \'y\'', () => template(null));
+			await expectError('Template used undefined parameters: \'x\', \'y\'', () => template({ z: 5 }));
+			await expectError('Template used undefined parameter \'x\'', () => template({ y: 999 }));
+			await expectError('Template used undefined parameter \'y\'', () => template({ x: 999 }));
+			await expectError('Template used undefined parameter \'y\'', () => template({ x: 999, z: 5 }));
 		});
 		it('provides a "this" value of undefined', async function () {
 			const template = await createTemplate('foo,{{String(this)}},bar');
@@ -117,16 +117,16 @@ describe('scope resolution', function () {
 		});
 		it('throws when the root template is missing parameter bindings', async function () {
 			let template = await createAsyncTemplate('{{let x}}foo{{x}}bar{{end}}');
-			await expectError('Template needs parameter \'x\'', () => template());
-			await expectError('Template needs parameter \'x\'', () => template(null));
-			await expectError('Template needs parameter \'x\'', () => template({ y: 999 }));
+			await expectError('Template used undefined parameter \'x\'', () => template());
+			await expectError('Template used undefined parameter \'x\'', () => template(null));
+			await expectError('Template used undefined parameter \'x\'', () => template({ y: 999 }));
 			template = await createAsyncTemplate('{{let x}}foo{{let y}}{{x + y}}{{end}}bar{{end}}');
-			await expectError('Template needs parameters: \'x\', \'y\'', () => template());
-			await expectError('Template needs parameters: \'x\', \'y\'', () => template(null));
-			await expectError('Template needs parameters: \'x\', \'y\'', () => template({ z: 5 }));
-			await expectError('Template needs parameter \'x\'', () => template({ y: 999 }));
-			await expectError('Template needs parameter \'y\'', () => template({ x: 999 }));
-			await expectError('Template needs parameter \'y\'', () => template({ x: 999, z: 5 }));
+			await expectError('Template used undefined parameters: \'x\', \'y\'', () => template());
+			await expectError('Template used undefined parameters: \'x\', \'y\'', () => template(null));
+			await expectError('Template used undefined parameters: \'x\', \'y\'', () => template({ z: 5 }));
+			await expectError('Template used undefined parameter \'x\'', () => template({ y: 999 }));
+			await expectError('Template used undefined parameter \'y\'', () => template({ x: 999 }));
+			await expectError('Template used undefined parameter \'y\'', () => template({ x: 999, z: 5 }));
 		});
 		it('provides a "this" value of undefined', async function () {
 			const template = await createAsyncTemplate('foo,{{String(this)}},bar');

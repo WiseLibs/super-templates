@@ -307,7 +307,7 @@ function getParameters(parameters, parameterNames, location) {
 	if (missing.size) {
 		const names = [...missing].map(name => `'${name}'`).join(', ');
 		const plural = missing.size > 1 ? 's:' : '';
-		throw createRuntimeError(new Error(`Template needs parameter${plural} ${names}`), location);
+		throw createRuntimeError(new Error(`Template used undefined parameter${plural} ${names}`), location);
 	}
 	return bindings;
 }
