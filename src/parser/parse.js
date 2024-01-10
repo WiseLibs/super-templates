@@ -1,5 +1,5 @@
 'use strict';
-const { File } = require('../source');
+const { File } = require('super-sources');
 const { tk } = require('../lexer');
 const Parser = require('./parser');
 const ast = require('./ast');

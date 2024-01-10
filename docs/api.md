@@ -19,6 +19,20 @@ Compiles a template file, and returns the compiled template as a string. Compili
 const compiledTemplate = await ST.compile('./my-template.html');
 ```
 
+If there's a syntax error in your template, a [`SourceError`](https://github.com/WiseLibs/super-sources?tab=readme-ov-file#class-sourceerror) will be thrown. If you catch it, you can call [`console.log(error.print())`](https://github.com/WiseLibs/super-sources?tab=readme-ov-file#errorprintoptions---string) to display a pretty error message that shows the offending source code in your template.
+
+```js
+try {
+    const compiledTemplate = await ST.compile('./my-template.html');
+} catch (err) {
+    if (err.name === 'SourceError') {
+        console.log(err.print());
+    } else {
+        throw err;
+    }
+}
+```
+
 ### An example of overriding the `resolve` and `load` functions
 
 In this example, template files are loaded from the web, instead of the filesystem.

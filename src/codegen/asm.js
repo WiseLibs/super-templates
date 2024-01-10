@@ -1,5 +1,5 @@
 'use strict';
-const { Source } = require('../source');
+const { Source } = require('super-sources');
 
 /*
 	These nodes form the intermediate-representation (IR) of a super template,

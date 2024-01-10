@@ -1,5 +1,5 @@
 'use strict';
-const { Source, LineMap } = require('../source');
+const { Source } = require('super-sources');
 const asm = require('./asm');
 
 /*
@@ -10,7 +10,6 @@ const asm = require('./asm');
 
 module.exports = class CodegenContext {
 	constructor() {
-		this._lineMaps = new Map();
 		this._names = new Map();
 		this._nextId = 0;
 		this.named = [];
@@ -33,12 +32,8 @@ module.exports = class CodegenContext {
 		if (!(source instanceof Source)) {
 			throw new TypeError('Expected source to be a Source object');
 		}
-		let lineMap = this._lineMaps.get(source.file);
-		if (!lineMap) {
-			lineMap = new LineMap(source.file);
-			this._lineMaps.set(source.file, lineMap);
-		}
-		const lineNumber = lineMap.find(source);
-		return `${source.file.filename}:${lineNumber}`;
+		const { file } = source;
+		const lineNumber = file.lineNumberAt(source.start);
+		return `${file.filename}:${lineNumber}`;
 	}
 };

@@ -1,6 +1,6 @@
 'use strict';
 const walkJS = require('acorn-walk');
-const { File } = require('../source');
+const { File } = require('super-sources');
 const Tokenizer = require('./tokenizer');
 const tk = require('./tk');
 

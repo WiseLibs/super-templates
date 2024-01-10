@@ -1,5 +1,5 @@
 'use strict';
-const { Source } = require('../source');
+const { Source } = require('super-sources');
 
 const NOT_WHITESPACE = /[^\x09\x0b\x0c\ufeff\x0a\x0d\u2028\u2029\p{Space_Separator}]/u;
 

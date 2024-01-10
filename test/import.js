@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('fs');
-const util = require('util');
+const { SourceError } = require('super-sources');
 const ST = require('../.');
 
 async function expectRender(value, fn) {
@@ -10,13 +10,18 @@ async function expectRender(value, fn) {
 	expect(output.join('')).to.equal(value);
 }
 
-async function expectError(message, fn, hasCustomInspect) {
+async function expectError(message, fn, isSourceError) {
 	try {
 		await fn();
 	} catch (err) {
 		expect(err.message.split(/\r?\n/)[0]).to.equal(message);
-		if (hasCustomInspect !== undefined) {
-			expect(util.inspect.custom in err).to.equal(hasCustomInspect);
+		if (isSourceError !== undefined) {
+			expect(err instanceof SourceError).to.equal(isSourceError);
+			if (isSourceError) {
+				expect(err.name).to.equal('SourceError');
+				expect(err.issues).to.be.an('array');
+				expect(err.issues.length).to.be.above(0);
+			}
 		}
 		return;
 	}

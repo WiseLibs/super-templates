@@ -1,5 +1,5 @@
 'use strict';
-const { File } = require('../source');
+const { File } = require('super-sources');
 const { lex } = require('../lexer');
 const beautify = require('./beautify');
 

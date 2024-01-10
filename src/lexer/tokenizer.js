@@ -1,6 +1,6 @@
 'use strict';
 const { parseExpressionAt } = require('acorn');
-const { File } = require('../source');
+const { File } = require('super-sources');
 
 /*
 	The scanner used for lexing. It can scan based on strings or RegExp objects,
